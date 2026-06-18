@@ -1,0 +1,21 @@
+customer,amount,due_date,last_activity,stage,contract_end,status
+Apex Technologies,84500,2026-04-01,2026-02-10,Negotiation,2026-07-15,open
+Bright Analytics,32000,2026-04-15,2026-01-20,Proposal,2026-08-30,open
+Cascade Systems,156000,2026-03-20,2026-03-01,Closed Won,,paid
+Delta Consulting,27500,2026-03-05,2025-11-15,Closed Lost,,closed
+Ember Solutions,61000,2026-04-10,2026-01-05,Demo,2026-06-30,open
+Franklin Corp,18000,2026-02-28,2025-12-20,,2026-07-01,open
+Global Ventures,94000,2026-05-01,2026-02-28,Qualified,,open
+Horizon Media,41500,2026-03-10,2026-03-10,,2026-07-20,open
+Integrated Tech,8500,2026-04-20,2025-10-01,Follow Up,,open
+Jetstream Inc,220000,2026-03-15,2026-03-14,Negotiation,2026-06-15,open
+Kestrel Dynamics,15000,2026-04-05,2026-01-30,Proposal,,open
+Luminary Group,73000,2026-02-20,2026-02-19,,2026-08-01,open
+Meridian Cloud,48000,2026-05-15,2026-03-01,Demo,2026-06-01,open
+Nextwave Data,31500,2026-03-25,2025-09-15,Follow Up,,open
+Orbital Labs,125000,2026-04-30,2026-03-05,Negotiation,2026-09-30,open
+Pinnacle AI,55000,2026-02-15,2026-02-14,,2026-07-31,open
+Quantum Retail,19000,2026-03-18,2025-08-20,Proposal,,open
+Redwood Systems,88000,2026-04-25,2026-01-10,Negotiation,2026-06-20,open
+Summit Partners,42000,2026-03-08,2026-03-07,,2026-08-15,open
+Titanium SaaS,67000,2026-02-10,2026-02-09,Qualified,2026-06-10,open

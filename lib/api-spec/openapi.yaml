@@ -3,20 +3,32 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ARQON Revenue Engine V1 API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: organizations
+    description: Organization management
+  - name: users
+    description: User management
+  - name: data-sources
+    description: Data source management
+  - name: findings
+    description: Revenue leak findings
+  - name: recommendations
+    description: Actionable recommendations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +36,822 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current session
+      responses:
+        "204":
+          description: No content
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /organizations:
+    get:
+      operationId: listOrganizations
+      tags: [organizations]
+      summary: List organizations for current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+    post:
+      operationId: createOrganization
+      tags: [organizations]
+      summary: Create a new organization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+
+  /organizations/{id}:
+    get:
+      operationId: getOrganization
+      tags: [organizations]
+      summary: Get organization by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateOrganization
+      tags: [organizations]
+      summary: Update organization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrganizationUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Organization"
+    delete:
+      operationId: deleteOrganization
+      tags: [organizations]
+      summary: Delete organization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: No content
+
+  /organizations/{id}/stats:
+    get:
+      operationId: getOrganizationStats
+      tags: [organizations]
+      summary: Get revenue stats summary for an organization
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationStats"
+
+  /organizations/{orgId}/data-sources:
+    get:
+      operationId: listDataSources
+      tags: [data-sources]
+      summary: List data sources for an organization
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DataSource"
+    post:
+      operationId: createDataSource
+      tags: [data-sources]
+      summary: Create a data source (scaffold for integrations)
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DataSourceInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSource"
+
+  /organizations/{orgId}/data-sources/{id}:
+    get:
+      operationId: getDataSource
+      tags: [data-sources]
+      summary: Get data source by ID
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSource"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteDataSource
+      tags: [data-sources]
+      summary: Delete data source
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: No content
+
+  /organizations/{orgId}/data-sources/{id}/upload:
+    post:
+      operationId: uploadDataSourceFile
+      tags: [data-sources]
+      summary: Upload a CSV file to a data source and trigger analysis
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CsvUploadInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataSource"
+
+  /organizations/{orgId}/data-sources/{id}/analyze:
+    post:
+      operationId: analyzeDataSource
+      tags: [data-sources]
+      summary: Re-run revenue leak analysis on a data source
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResult"
+
+  /organizations/{orgId}/findings:
+    get:
+      operationId: getFindings
+      tags: [findings]
+      summary: List findings for an organization
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Finding"
+
+  /organizations/{orgId}/findings/{id}:
+    get:
+      operationId: getFinding
+      tags: [findings]
+      summary: Get finding by ID
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Finding"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateFinding
+      tags: [findings]
+      summary: Update finding status
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FindingUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Finding"
+
+  /organizations/{orgId}/recommendations:
+    get:
+      operationId: getRecommendations
+      tags: [recommendations]
+      summary: List recommendations for an organization
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+
+  /organizations/{orgId}/recommendations/{id}:
+    get:
+      operationId: getRecommendation
+      tags: [recommendations]
+      summary: Get recommendation by ID
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateRecommendation
+      tags: [recommendations]
+      summary: Update recommendation status
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendationUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    RegisterInput:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+          minLength: 1
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+
+    UserProfile:
+      type: object
+      required: [id, email, name, role, createdAt]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, member]
+        organizationId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    OrganizationInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        industry:
+          type: string
+        currency:
+          type: string
+          default: USD
+
+    OrganizationUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        industry:
+          type: string
+        currency:
+          type: string
+
+    Organization:
+      type: object
+      required: [id, name, currency, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        industry:
+          type: ["string", "null"]
+        currency:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrganizationStats:
+      type: object
+      required: [totalAtRisk, findingsCount, openFindingsCount, resolvedFindingsCount, recommendationsCount, pendingRecommendationsCount, byType, bySeverity]
+      properties:
+        totalAtRisk:
+          type: number
+          description: Total estimated revenue at risk in organization currency
+        findingsCount:
+          type: integer
+        openFindingsCount:
+          type: integer
+        resolvedFindingsCount:
+          type: integer
+        recommendationsCount:
+          type: integer
+        pendingRecommendationsCount:
+          type: integer
+        byType:
+          type: array
+          items:
+            $ref: "#/components/schemas/FindingTypeStat"
+        bySeverity:
+          type: array
+          items:
+            $ref: "#/components/schemas/FindingSeverityStat"
+
+    FindingTypeStat:
+      type: object
+      required: [type, count, totalAtRisk]
+      properties:
+        type:
+          type: string
+        count:
+          type: integer
+        totalAtRisk:
+          type: number
+
+    FindingSeverityStat:
+      type: object
+      required: [severity, count, totalAtRisk]
+      properties:
+        severity:
+          type: string
+        count:
+          type: integer
+        totalAtRisk:
+          type: number
+
+    DataSourceInput:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          enum: [csv, hubspot, pipedrive, google_sheets, stripe, asaas]
+        description:
+          type: string
+
+    DataSource:
+      type: object
+      required: [id, orgId, name, type, status, createdAt]
+      properties:
+        id:
+          type: integer
+        orgId:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [csv, hubspot, pipedrive, google_sheets, stripe, asaas]
+        status:
+          type: string
+          enum: [pending, processing, ready, error]
+        description:
+          type: ["string", "null"]
+        fileName:
+          type: ["string", "null"]
+        rowCount:
+          type: ["integer", "null"]
+        lastAnalyzedAt:
+          type: ["string", "null"]
+          format: date-time
+        errorMessage:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    AnalysisResult:
+      type: object
+      required: [dataSourceId, findingsCreated, recommendationsCreated]
+      properties:
+        dataSourceId:
+          type: integer
+        findingsCreated:
+          type: integer
+        recommendationsCreated:
+          type: integer
+
+    Finding:
+      type: object
+      required: [id, orgId, dataSourceId, type, severity, title, description, estimatedImpact, status, createdAt]
+      properties:
+        id:
+          type: integer
+        orgId:
+          type: integer
+        dataSourceId:
+          type: integer
+        type:
+          type: string
+          enum: [overdue_invoice, inactive_customer, stalled_opportunity, contract_expiration]
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        title:
+          type: string
+        description:
+          type: string
+        estimatedImpact:
+          type: number
+          description: Estimated revenue impact in organization currency
+        affectedEntity:
+          type: ["string", "null"]
+          description: Customer name, contract ID, or other entity identifier
+        daysOverdue:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [open, acknowledged, resolved, dismissed]
+        metadata:
+          type: ["object", "null"]
+          additionalProperties: true
+        resolvedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    FindingUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [open, acknowledged, resolved, dismissed]
+
+    Recommendation:
+      type: object
+      required: [id, orgId, findingId, priority, title, description, estimatedRecovery, status, createdAt]
+      properties:
+        id:
+          type: integer
+        orgId:
+          type: integer
+        findingId:
+          type: integer
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+        title:
+          type: string
+        description:
+          type: string
+        estimatedRecovery:
+          type: number
+          description: Estimated recoverable revenue
+        actionLabel:
+          type: ["string", "null"]
+          description: Short action button label
+        status:
+          type: string
+          enum: [pending, in_progress, completed, dismissed]
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RecommendationUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, in_progress, completed, dismissed]
+
+    CsvUploadInput:
+      type: object
+      required: [file]
+      properties:
+        file:
+          type: string
+          format: binary
