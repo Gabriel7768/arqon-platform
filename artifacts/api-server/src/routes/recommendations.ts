@@ -8,9 +8,11 @@ import {
   UpdateRecommendationBody,
 } from "@workspace/api-zod";
 import { authenticate } from "../middlewares/authenticate";
+import { orgParamGuard } from "../middlewares/org-guard";
 
 const router: IRouter = Router();
 router.use(authenticate);
+router.param("orgId", orgParamGuard);
 
 function formatRec(r: typeof recommendationsTable.$inferSelect) {
   return {

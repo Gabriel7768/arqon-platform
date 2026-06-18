@@ -10,6 +10,7 @@ import {
   GetOrganizationStatsParams,
 } from "@workspace/api-zod";
 import { authenticate, type AuthRequest } from "../middlewares/authenticate";
+import { orgGuard } from "../middlewares/org-guard";
 
 const router: IRouter = Router();
 
@@ -66,7 +67,7 @@ router.post("/organizations", async (req: AuthRequest, res): Promise<void> => {
   });
 });
 
-router.get("/organizations/:id", async (req, res): Promise<void> => {
+router.get("/organizations/:id", orgGuard, async (req, res): Promise<void> => {
   const params = GetOrganizationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -89,7 +90,7 @@ router.get("/organizations/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.patch("/organizations/:id", async (req, res): Promise<void> => {
+router.patch("/organizations/:id", orgGuard, async (req, res): Promise<void> => {
   const params = UpdateOrganizationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -127,7 +128,7 @@ router.patch("/organizations/:id", async (req, res): Promise<void> => {
   });
 });
 
-router.delete("/organizations/:id", async (req, res): Promise<void> => {
+router.delete("/organizations/:id", orgGuard, async (req, res): Promise<void> => {
   const params = DeleteOrganizationParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -143,7 +144,7 @@ router.delete("/organizations/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.get("/organizations/:id/stats", async (req, res): Promise<void> => {
+router.get("/organizations/:id/stats", orgGuard, async (req, res): Promise<void> => {
   const params = GetOrganizationStatsParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

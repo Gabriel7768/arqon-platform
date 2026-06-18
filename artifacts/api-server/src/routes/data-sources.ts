@@ -14,6 +14,7 @@ import {
   AnalyzeDataSourceParams,
 } from "@workspace/api-zod";
 import { authenticate, type AuthRequest } from "../middlewares/authenticate";
+import { orgParamGuard } from "../middlewares/org-guard";
 import { analyzeDataSource } from "../lib/revenue-engine";
 import { logger } from "../lib/logger";
 
@@ -48,6 +49,7 @@ const upload = multer({
 
 const router: IRouter = Router();
 router.use(authenticate);
+router.param("orgId", orgParamGuard);
 
 function formatDs(ds: typeof dataSourcesTable.$inferSelect) {
   return {

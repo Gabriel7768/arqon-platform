@@ -8,9 +8,11 @@ import {
   UpdateFindingBody,
 } from "@workspace/api-zod";
 import { authenticate } from "../middlewares/authenticate";
+import { orgParamGuard } from "../middlewares/org-guard";
 
 const router: IRouter = Router();
 router.use(authenticate);
+router.param("orgId", orgParamGuard);
 
 function formatFinding(f: typeof findingsTable.$inferSelect) {
   return {
