@@ -1,0 +1,139 @@
+arqon/
+│
+├── apps/
+│   │
+│   ├── web/
+│   │   ├── src/
+│   │   │   ├── app/
+│   │   │   ├── components/
+│   │   │   ├── features/
+│   │   │   ├── hooks/
+│   │   │   ├── services/
+│   │   │   ├── store/
+│   │   │   ├── providers/
+│   │   │   ├── lib/
+│   │   │   ├── types/
+│   │   │   └── styles/
+│   │   │
+│   │   ├── public/
+│   │   ├── tests/
+│   │   └── package.json
+│   │
+│   └── api/
+│       ├── src/
+│       │   ├── modules/
+│       │   │
+│       │   ├── auth/
+│       │   ├── organizations/
+│       │   ├── users/
+│       │   ├── data-sources/
+│       │   ├── uploads/
+│       │   ├── findings/
+│       │   ├── recommendations/
+│       │   ├── revenue-engine/
+│       │   ├── decision-engine/
+│       │   ├── knowledge-engine/
+│       │   ├── billing/
+│       │   └── integrations/
+│       │
+│       │   ├── shared/
+│       │   ├── config/
+│       │   ├── middleware/
+│       │   ├── database/
+│       │   ├── queues/
+│       │   ├── jobs/
+│       │   ├── events/
+│       │   └── server.ts
+│       │
+│       ├── tests/
+│       └── package.json
+│
+├── packages/
+│   │
+│   ├── shared/
+│   │   ├── constants/
+│   │   ├── enums/
+│   │   ├── validators/
+│   │   ├── schemas/
+│   │   └── helpers/
+│   │
+│   ├── types/
+│   │
+│   ├── ui/
+│   │
+│   ├── sdk/
+│   │
+│   ├── integrations/
+│   │   │
+│   │   ├── csv/
+│   │   ├── google-sheets/
+│   │   ├── hubspot/
+│   │   ├── pipedrive/
+│   │   ├── stripe/
+│   │   ├── asaas/
+│   │   ├── omie/
+│   │   └── conta-azul/
+│   │
+│   ├── revenue-engine/
+│   │
+│   ├── decision-engine/
+│   │
+│   ├── knowledge-engine/
+│   │
+│   └── analytics/
+│
+├── infrastructure/
+│   │
+│   ├── render/
+│   ├── vercel/
+│   ├── docker/
+│   └── github/
+│
+├── docs/
+│   │
+│   ├── product/
+│   ├── architecture/
+│   ├── api/
+│   ├── prompts/
+│   ├── roadmap/
+│   └── decisions/
+│
+├── scripts/
+│
+├── database/
+│   │
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   ├── migrations/
+│   │   └── seed.ts
+│   │
+│   └── backups/
+│
+├── tests/
+│   │
+│   ├── unit/
+│   ├── integration/
+│   ├── e2e/
+│   └── performance/
+│
+├── .github/
+│   │
+│   └── workflows/
+│       ├── lint.yml
+│       ├── test.yml
+│       ├── build.yml
+│       └── deploy.yml
+│
+├── .husky/
+│
+├── .env.example
+│
+├── turbo.json
+│
+├── pnpm-workspace.yaml
+│
+├── package.json
+│
+├── README.md
+│
+└── ARCHITECTURE.md
