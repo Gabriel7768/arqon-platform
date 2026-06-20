@@ -25,7 +25,7 @@ function daysBetween(a: Date, b: Date): number {
   return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function detectSeverity(impact: number): "critical" | "high" | "medium" | "low" {
+export function detectSeverity(impact: number): "critical" | "high" | "medium" | "low" {
   if (impact >= 50000) return "critical";
   if (impact >= 10000) return "high";
   if (impact >= 1000) return "medium";
@@ -136,7 +136,8 @@ export async function analyzeDataSource(
         if (lastActivity) {
           const daysSince = daysBetween(lastActivity, now);
           if (daysSince > 90) {
-            const severity = detectSeverity(amount);
+            const estimatedImpact = amount * 0.3;
+            const severity = detectSeverity(estimatedImpact);
             const [finding] = await db.insert(findingsTable).values({
               orgId,
               dataSourceId,
@@ -144,7 +145,7 @@ export async function analyzeDataSource(
               severity,
               title: `Inactive customer: ${customer}`,
               description: `${customer} has had no activity for ${daysSince} days. Last interaction: ${lastActivity.toLocaleDateString()}.`,
-              estimatedImpact: (amount * 0.3).toFixed(2),
+              estimatedImpact: estimatedImpact.toFixed(2),
               affectedEntity: customer,
               daysOverdue: daysSince,
               status: "open",
