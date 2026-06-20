@@ -21,6 +21,7 @@ import type {
 
 import type {
   AnalysisResult,
+  AnalysisRun,
   AuthResponse,
   CsvUploadInput,
   DataSource,
@@ -1312,6 +1313,165 @@ export const useAnalyzeDataSource = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getAnalyzeDataSourceMutationOptions(options));
     }
+
+export const getListAnalysisRunsUrl = (orgId: number,) => {
+
+
+
+
+  return `/api/organizations/${orgId}/analysis-runs`
+}
+
+/**
+ * @summary List analysis runs for an organization
+ */
+export const listAnalysisRuns = async (orgId: number, options?: RequestInit): Promise<AnalysisRun[]> => {
+
+  return customFetch<AnalysisRun[]>(getListAnalysisRunsUrl(orgId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAnalysisRunsQueryKey = (orgId: number,) => {
+    return [
+    `/api/organizations/${orgId}/analysis-runs`
+    ] as const;
+    }
+
+
+export const getListAnalysisRunsQueryOptions = <TData = Awaited<ReturnType<typeof listAnalysisRuns>>, TError = ErrorType<unknown>>(orgId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnalysisRuns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAnalysisRunsQueryKey(orgId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAnalysisRuns>>> = ({ signal }) => listAnalysisRuns(orgId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(orgId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAnalysisRuns>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAnalysisRunsQueryResult = NonNullable<Awaited<ReturnType<typeof listAnalysisRuns>>>
+export type ListAnalysisRunsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List analysis runs for an organization
+ */
+
+export function useListAnalysisRuns<TData = Awaited<ReturnType<typeof listAnalysisRuns>>, TError = ErrorType<unknown>>(
+ orgId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAnalysisRuns>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAnalysisRunsQueryOptions(orgId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetAnalysisRunUrl = (orgId: number,
+    runId: string,) => {
+
+
+
+
+  return `/api/organizations/${orgId}/analysis-runs/${runId}`
+}
+
+/**
+ * @summary Get an analysis run by ID
+ */
+export const getAnalysisRun = async (orgId: number,
+    runId: string, options?: RequestInit): Promise<AnalysisRun> => {
+
+  return customFetch<AnalysisRun>(getGetAnalysisRunUrl(orgId,runId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAnalysisRunQueryKey = (orgId: number,
+    runId: string,) => {
+    return [
+    `/api/organizations/${orgId}/analysis-runs/${runId}`
+    ] as const;
+    }
+
+
+export const getGetAnalysisRunQueryOptions = <TData = Awaited<ReturnType<typeof getAnalysisRun>>, TError = ErrorType<ErrorResponse>>(orgId: number,
+    runId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalysisRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnalysisRunQueryKey(orgId,runId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalysisRun>>> = ({ signal }) => getAnalysisRun(orgId,runId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(orgId && runId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnalysisRun>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAnalysisRunQueryResult = NonNullable<Awaited<ReturnType<typeof getAnalysisRun>>>
+export type GetAnalysisRunQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Get an analysis run by ID
+ */
+
+export function useGetAnalysisRun<TData = Awaited<ReturnType<typeof getAnalysisRun>>, TError = ErrorType<ErrorResponse>>(
+ orgId: number,
+    runId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnalysisRun>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAnalysisRunQueryOptions(orgId,runId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetFindingsUrl = (orgId: number,) => {
 

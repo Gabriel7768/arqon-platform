@@ -9,5 +9,8 @@
 export interface AnalysisResult {
   dataSourceId: number;
   findingsCreated: number;
+  findingsUpdated?: number;
+  findingsInactivated?: number;
   recommendationsCreated: number;
+  runId: string;
 }

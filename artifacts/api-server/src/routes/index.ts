@@ -5,6 +5,7 @@ import organizationsRouter from "./organizations";
 import dataSourcesRouter from "./data-sources";
 import findingsRouter from "./findings";
 import recommendationsRouter from "./recommendations";
+import analysisRunsRouter from "./analysis-runs";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(organizationsRouter);
 router.use(dataSourcesRouter);
 router.use(findingsRouter);
 router.use(recommendationsRouter);
+router.use(analysisRunsRouter);
 
 export default router;

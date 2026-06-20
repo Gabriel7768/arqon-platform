@@ -14,4 +14,5 @@ export const FindingStatus = {
   acknowledged: 'acknowledged',
   resolved: 'resolved',
   dismissed: 'dismissed',
+  inactive: 'inactive',
 } as const;

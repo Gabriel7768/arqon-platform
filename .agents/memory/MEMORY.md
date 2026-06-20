@@ -1,1 +1,3 @@
 - [Express router.param vs router.use for named params](express-router-param.md) — router.use fires before params are extracted; use router.param for :orgId-style guards
+- [P0-2 persistent findings](p02-persistent-findings.md) — upsert engine: fingerprint=(sha256 of [type,entityKey,discriminator]).slice(0,16); stale sweep marks open/acknowledged as inactive; analyst statuses preserved
+- [Drizzle onConflictDoUpdate](drizzle-upsert.md) — use sql\`excluded.col\` for new value, sql\`${table.col}\` for existing; $onUpdate hook does NOT fire on conflict; set updatedAt explicitly

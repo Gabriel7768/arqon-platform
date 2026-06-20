@@ -161,7 +161,10 @@ export interface DataSource {
 export interface AnalysisResult {
   dataSourceId: number;
   findingsCreated: number;
+  findingsUpdated?: number;
+  findingsInactivated?: number;
   recommendationsCreated: number;
+  runId: string;
 }
 
 export type FindingType = typeof FindingType[keyof typeof FindingType];
@@ -192,6 +195,7 @@ export const FindingStatus = {
   acknowledged: 'acknowledged',
   resolved: 'resolved',
   dismissed: 'dismissed',
+  inactive: 'inactive',
 } as const;
 
 /**
@@ -214,13 +218,34 @@ export interface Finding {
      * @nullable
      */
   affectedEntity?: string | null;
+  /**
+     * Normalized entity identifier used for trend grouping
+     * @nullable
+     */
+  entityKey?: string | null;
   /** @nullable */
   daysOverdue?: number | null;
   status: FindingStatus;
+  /**
+     * Detection confidence 0-100; rule-based detectors default to 100
+     * @minimum 0
+     * @maximum 100
+     */
+  confidenceScore: number;
+  /** Number of consecutive analysis runs that detected this condition */
+  detectionCount: number;
+  firstDetectedAt: string;
+  lastDetectedAt: string;
+  /** @nullable */
+  lastRunId?: string | null;
+  /** @nullable */
+  analystNote?: string | null;
   /** @nullable */
   metadata?: FindingMetadata;
   /** @nullable */
   resolvedAt?: string | null;
+  /** @nullable */
+  dismissedAt?: string | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -237,6 +262,7 @@ export const FindingUpdateStatus = {
 
 export interface FindingUpdate {
   status?: FindingUpdateStatus;
+  analystNote?: string | null;
 }
 
 export type RecommendationPriority = typeof RecommendationPriority[keyof typeof RecommendationPriority];
@@ -274,6 +300,13 @@ export interface Recommendation {
      */
   actionLabel?: string | null;
   status: RecommendationStatus;
+  /** Incremented on each re-analysis update */
+  generation: number;
+  /**
+     * Set when the parent finding becomes inactive; cleared on re-detection
+     * @nullable
+     */
+  supersededAt?: string | null;
   /** @nullable */
   completedAt?: string | null;
   createdAt: string;
@@ -296,5 +329,33 @@ export interface RecommendationUpdate {
 
 export interface CsvUploadInput {
   file: Blob;
+}
+
+export type AnalysisRunStatus = typeof AnalysisRunStatus[keyof typeof AnalysisRunStatus];
+
+
+export const AnalysisRunStatus = {
+  running: 'running',
+  completed: 'completed',
+  failed: 'failed',
+} as const;
+
+export interface AnalysisRun {
+  id: string;
+  orgId: number;
+  dataSourceId: number;
+  /** @nullable */
+  triggeredBy?: number | null;
+  status: AnalysisRunStatus;
+  /** @nullable */
+  rowsProcessed?: number | null;
+  findingsCreated: number;
+  findingsUpdated: number;
+  findingsInactivated: number;
+  startedAt: string;
+  /** @nullable */
+  completedAt?: string | null;
+  /** @nullable */
+  errorMessage?: string | null;
 }
 

@@ -25,13 +25,34 @@ export interface Finding {
      * @nullable
      */
   affectedEntity?: string | null;
+  /**
+     * Normalized entity identifier used for trend grouping
+     * @nullable
+     */
+  entityKey?: string | null;
   /** @nullable */
   daysOverdue?: number | null;
   status: FindingStatus;
+  /**
+     * Detection confidence 0-100; rule-based detectors default to 100
+     * @minimum 0
+     * @maximum 100
+     */
+  confidenceScore: number;
+  /** Number of consecutive analysis runs that detected this condition */
+  detectionCount: number;
+  firstDetectedAt: Date;
+  lastDetectedAt: Date;
+  /** @nullable */
+  lastRunId?: string | null;
+  /** @nullable */
+  analystNote?: string | null;
   /** @nullable */
   metadata?: FindingMetadata;
   /** @nullable */
   resolvedAt?: Date | null;
+  /** @nullable */
+  dismissedAt?: Date | null;
   createdAt: Date;
   updatedAt?: Date;
 }

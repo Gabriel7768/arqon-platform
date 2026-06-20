@@ -283,7 +283,58 @@ export const AnalyzeDataSourceParams = zod.object({
 export const AnalyzeDataSourceResponse = zod.object({
   "dataSourceId": zod.number(),
   "findingsCreated": zod.number(),
-  "recommendationsCreated": zod.number()
+  "findingsUpdated": zod.number().optional(),
+  "findingsInactivated": zod.number().optional(),
+  "recommendationsCreated": zod.number(),
+  "runId": zod.string().uuid()
+})
+
+
+/**
+ * @summary List analysis runs for an organization
+ */
+export const ListAnalysisRunsParams = zod.object({
+  "orgId": zod.coerce.number()
+})
+
+export const ListAnalysisRunsResponseItem = zod.object({
+  "id": zod.string().uuid(),
+  "orgId": zod.number(),
+  "dataSourceId": zod.number(),
+  "triggeredBy": zod.number().nullish(),
+  "status": zod.enum(['running', 'completed', 'failed']),
+  "rowsProcessed": zod.number().nullish(),
+  "findingsCreated": zod.number(),
+  "findingsUpdated": zod.number(),
+  "findingsInactivated": zod.number(),
+  "startedAt": zod.coerce.date(),
+  "completedAt": zod.coerce.date().nullish(),
+  "errorMessage": zod.string().nullish()
+})
+export const ListAnalysisRunsResponse = zod.array(ListAnalysisRunsResponseItem)
+
+
+/**
+ * @summary Get an analysis run by ID
+ */
+export const GetAnalysisRunParams = zod.object({
+  "orgId": zod.coerce.number(),
+  "runId": zod.coerce.string().uuid()
+})
+
+export const GetAnalysisRunResponse = zod.object({
+  "id": zod.string().uuid(),
+  "orgId": zod.number(),
+  "dataSourceId": zod.number(),
+  "triggeredBy": zod.number().nullish(),
+  "status": zod.enum(['running', 'completed', 'failed']),
+  "rowsProcessed": zod.number().nullish(),
+  "findingsCreated": zod.number(),
+  "findingsUpdated": zod.number(),
+  "findingsInactivated": zod.number(),
+  "startedAt": zod.coerce.date(),
+  "completedAt": zod.coerce.date().nullish(),
+  "errorMessage": zod.string().nullish()
 })
 
 
@@ -293,6 +344,11 @@ export const AnalyzeDataSourceResponse = zod.object({
 export const GetFindingsParams = zod.object({
   "orgId": zod.coerce.number()
 })
+
+export const getFindingsResponseConfidenceScoreMin = 0;
+export const getFindingsResponseConfidenceScoreMax = 100;
+
+
 
 export const GetFindingsResponseItem = zod.object({
   "id": zod.number(),
@@ -304,10 +360,18 @@ export const GetFindingsResponseItem = zod.object({
   "description": zod.string(),
   "estimatedImpact": zod.number().describe('Estimated revenue impact in organization currency'),
   "affectedEntity": zod.string().nullish().describe('Customer name, contract ID, or other entity identifier'),
+  "entityKey": zod.string().nullish().describe('Normalized entity identifier used for trend grouping'),
   "daysOverdue": zod.number().nullish(),
-  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed']),
+  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed', 'inactive']),
+  "confidenceScore": zod.number().min(getFindingsResponseConfidenceScoreMin).max(getFindingsResponseConfidenceScoreMax).describe('Detection confidence 0-100; rule-based detectors default to 100'),
+  "detectionCount": zod.number().describe('Number of consecutive analysis runs that detected this condition'),
+  "firstDetectedAt": zod.coerce.date(),
+  "lastDetectedAt": zod.coerce.date(),
+  "lastRunId": zod.string().uuid().nullish(),
+  "analystNote": zod.string().nullish(),
   "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "resolvedAt": zod.coerce.date().nullish(),
+  "dismissedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -322,6 +386,11 @@ export const GetFindingParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getFindingResponseConfidenceScoreMin = 0;
+export const getFindingResponseConfidenceScoreMax = 100;
+
+
+
 export const GetFindingResponse = zod.object({
   "id": zod.number(),
   "orgId": zod.number(),
@@ -332,10 +401,18 @@ export const GetFindingResponse = zod.object({
   "description": zod.string(),
   "estimatedImpact": zod.number().describe('Estimated revenue impact in organization currency'),
   "affectedEntity": zod.string().nullish().describe('Customer name, contract ID, or other entity identifier'),
+  "entityKey": zod.string().nullish().describe('Normalized entity identifier used for trend grouping'),
   "daysOverdue": zod.number().nullish(),
-  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed']),
+  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed', 'inactive']),
+  "confidenceScore": zod.number().min(getFindingResponseConfidenceScoreMin).max(getFindingResponseConfidenceScoreMax).describe('Detection confidence 0-100; rule-based detectors default to 100'),
+  "detectionCount": zod.number().describe('Number of consecutive analysis runs that detected this condition'),
+  "firstDetectedAt": zod.coerce.date(),
+  "lastDetectedAt": zod.coerce.date(),
+  "lastRunId": zod.string().uuid().nullish(),
+  "analystNote": zod.string().nullish(),
   "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "resolvedAt": zod.coerce.date().nullish(),
+  "dismissedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -350,8 +427,14 @@ export const UpdateFindingParams = zod.object({
 })
 
 export const UpdateFindingBody = zod.object({
-  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed']).optional()
+  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed']).optional(),
+  "analystNote": zod.string().nullish()
 })
+
+export const updateFindingResponseConfidenceScoreMin = 0;
+export const updateFindingResponseConfidenceScoreMax = 100;
+
+
 
 export const UpdateFindingResponse = zod.object({
   "id": zod.number(),
@@ -363,10 +446,18 @@ export const UpdateFindingResponse = zod.object({
   "description": zod.string(),
   "estimatedImpact": zod.number().describe('Estimated revenue impact in organization currency'),
   "affectedEntity": zod.string().nullish().describe('Customer name, contract ID, or other entity identifier'),
+  "entityKey": zod.string().nullish().describe('Normalized entity identifier used for trend grouping'),
   "daysOverdue": zod.number().nullish(),
-  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed']),
+  "status": zod.enum(['open', 'acknowledged', 'resolved', 'dismissed', 'inactive']),
+  "confidenceScore": zod.number().min(updateFindingResponseConfidenceScoreMin).max(updateFindingResponseConfidenceScoreMax).describe('Detection confidence 0-100; rule-based detectors default to 100'),
+  "detectionCount": zod.number().describe('Number of consecutive analysis runs that detected this condition'),
+  "firstDetectedAt": zod.coerce.date(),
+  "lastDetectedAt": zod.coerce.date(),
+  "lastRunId": zod.string().uuid().nullish(),
+  "analystNote": zod.string().nullish(),
   "metadata": zod.record(zod.string(), zod.unknown()).nullish(),
   "resolvedAt": zod.coerce.date().nullish(),
+  "dismissedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
 })
@@ -389,6 +480,8 @@ export const GetRecommendationsResponseItem = zod.object({
   "estimatedRecovery": zod.number().describe('Estimated recoverable revenue'),
   "actionLabel": zod.string().nullish().describe('Short action button label'),
   "status": zod.enum(['pending', 'in_progress', 'completed', 'dismissed']),
+  "generation": zod.number().describe('Incremented on each re-analysis update'),
+  "supersededAt": zod.coerce.date().nullish().describe('Set when the parent finding becomes inactive; cleared on re-detection'),
   "completedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
@@ -414,6 +507,8 @@ export const GetRecommendationResponse = zod.object({
   "estimatedRecovery": zod.number().describe('Estimated recoverable revenue'),
   "actionLabel": zod.string().nullish().describe('Short action button label'),
   "status": zod.enum(['pending', 'in_progress', 'completed', 'dismissed']),
+  "generation": zod.number().describe('Incremented on each re-analysis update'),
+  "supersededAt": zod.coerce.date().nullish().describe('Set when the parent finding becomes inactive; cleared on re-detection'),
   "completedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()
@@ -442,6 +537,8 @@ export const UpdateRecommendationResponse = zod.object({
   "estimatedRecovery": zod.number().describe('Estimated recoverable revenue'),
   "actionLabel": zod.string().nullish().describe('Short action button label'),
   "status": zod.enum(['pending', 'in_progress', 'completed', 'dismissed']),
+  "generation": zod.number().describe('Incremented on each re-analysis update'),
+  "supersededAt": zod.coerce.date().nullish().describe('Set when the parent finding becomes inactive; cleared on re-detection'),
   "completedAt": zod.coerce.date().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date().optional()

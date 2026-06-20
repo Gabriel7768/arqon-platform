@@ -23,6 +23,13 @@ export interface Recommendation {
      */
   actionLabel?: string | null;
   status: RecommendationStatus;
+  /** Incremented on each re-analysis update */
+  generation: number;
+  /**
+     * Set when the parent finding becomes inactive; cleared on re-detection
+     * @nullable
+     */
+  supersededAt?: Date | null;
   /** @nullable */
   completedAt?: Date | null;
   createdAt: Date;

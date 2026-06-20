@@ -1,0 +1,160 @@
+Implement P0-2 from the ARQON Revenue Engine Remediation Roadmap.
+
+GOAL
+
+Preserve user triage work when a data source is re-analyzed.
+
+CURRENT PROBLEM
+
+The analysis engine deletes all findings before generating new ones.
+
+Current flow:
+
+1. Delete findings for dataSourceId
+2. Run detectors
+3. Insert new findings
+
+This destroys:
+
+- resolved findings
+- dismissed findings
+- audit history
+- user decisions
+
+This is not acceptable for production.
+
+REQUIREMENTS
+
+Before modifying any code:
+
+1. Audit the current implementation.
+2. Identify every location where findings are deleted or recreated.
+3. Produce an implementation plan.
+4. Wait for implementation approval only if a breaking schema change is required.
+
+IMPLEMENTATION TARGET
+
+When re-analysis runs:
+
+STEP 1
+
+Capture all findings with status:
+
+- resolved
+- dismissed
+
+Store:
+
+- affectedEntity
+- findingType
+- status
+- resolvedAt
+- updatedAt
+
+STEP 2
+
+Run analysis normally.
+
+STEP 3
+
+When new findings are generated:
+
+If a finding matches:
+
+- same dataSourceId
+- same affectedEntity
+- same type
+
+Restore previous status.
+
+Example:
+
+Old finding:
+Customer ABC
+inactive_customer
+resolved
+
+New analysis generates:
+
+Customer ABC
+inactive_customer
+
+Result:
+
+status = resolved
+
+STEP 4
+
+Restore:
+
+- resolvedAt
+- dismissed metadata if available
+
+STEP 5
+
+Add tests.
+
+TEST CASES
+
+Case A
+
+Resolved finding exists.
+Re-analysis runs.
+
+Expected:
+Finding remains resolved.
+
+Case B
+
+Dismissed finding exists.
+Re-analysis runs.
+
+Expected:
+Finding remains dismissed.
+
+Case C
+
+Finding disappeared because issue no longer exists.
+
+Expected:
+No active finding created.
+
+Case D
+
+New issue appears.
+
+Expected:
+New finding status = open.
+
+Case E
+
+Multiple findings for same customer.
+
+Expected:
+Matching occurs using:
+
+(dataSourceId, affectedEntity, type)
+
+NOT customer name only.
+
+TECHNICAL REQUIREMENTS
+
+- No data loss.
+- No breaking API changes.
+- No UI changes.
+- No regression in existing tests.
+- Add dedicated Vitest coverage.
+- Keep implementation deterministic and idempotent.
+
+SUCCESS CRITERIA
+
+After re-analysis:
+
+- User triage decisions survive.
+- Resolved findings remain resolved.
+- Dismissed findings remain dismissed.
+- New findings start as open.
+- All tests pass.
+
+Do not implement P0-3 yet.
+Focus only on P0-2.

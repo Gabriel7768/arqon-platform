@@ -25,10 +25,18 @@ function formatFinding(f: typeof findingsTable.$inferSelect) {
     description: f.description,
     estimatedImpact: parseFloat(String(f.estimatedImpact) || "0"),
     affectedEntity: f.affectedEntity ?? null,
+    entityKey: f.entityKey ?? null,
     daysOverdue: f.daysOverdue ?? null,
     status: f.status,
+    confidenceScore: f.confidenceScore,
+    detectionCount: f.detectionCount,
+    firstDetectedAt: f.firstDetectedAt.toISOString(),
+    lastDetectedAt: f.lastDetectedAt.toISOString(),
+    lastRunId: f.lastRunId ?? null,
+    analystNote: f.analystNote ?? null,
     metadata: f.metadata ?? null,
     resolvedAt: f.resolvedAt ? f.resolvedAt.toISOString() : null,
+    dismissedAt: f.dismissedAt ? f.dismissedAt.toISOString() : null,
     createdAt: f.createdAt.toISOString(),
     updatedAt: f.updatedAt.toISOString(),
   };
@@ -78,11 +86,19 @@ router.patch("/organizations/:orgId/findings/:id", async (req, res): Promise<voi
   }
 
   const updateData: Record<string, unknown> = {};
+
   if (parsed.data.status !== undefined) {
     updateData.status = parsed.data.status;
     if (parsed.data.status === "resolved") {
       updateData.resolvedAt = new Date();
     }
+    if (parsed.data.status === "dismissed") {
+      updateData.dismissedAt = new Date();
+    }
+  }
+
+  if (parsed.data.analystNote !== undefined) {
+    updateData.analystNote = parsed.data.analystNote;
   }
 
   const [finding] = await db.update(findingsTable)

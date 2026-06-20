@@ -25,6 +25,8 @@ function formatRec(r: typeof recommendationsTable.$inferSelect) {
     estimatedRecovery: parseFloat(String(r.estimatedRecovery) || "0"),
     actionLabel: r.actionLabel ?? null,
     status: r.status,
+    generation: r.generation,
+    supersededAt: r.supersededAt ? r.supersededAt.toISOString() : null,
     completedAt: r.completedAt ? r.completedAt.toISOString() : null,
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),

@@ -22,6 +22,8 @@ tags:
     description: Revenue leak findings
   - name: recommendations
     description: Actionable recommendations
+  - name: analysis-runs
+    description: Analysis execution history
 
 paths:
   /healthz:
@@ -378,6 +380,58 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AnalysisResult"
+
+  /organizations/{orgId}/analysis-runs:
+    get:
+      operationId: listAnalysisRuns
+      tags: [analysis-runs]
+      summary: List analysis runs for an organization
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalysisRun"
+
+  /organizations/{orgId}/analysis-runs/{runId}:
+    get:
+      operationId: getAnalysisRun
+      tags: [analysis-runs]
+      summary: Get an analysis run by ID
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisRun"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /organizations/{orgId}/findings:
     get:
@@ -745,18 +799,25 @@ components:
 
     AnalysisResult:
       type: object
-      required: [dataSourceId, findingsCreated, recommendationsCreated]
+      required: [dataSourceId, findingsCreated, recommendationsCreated, runId]
       properties:
         dataSourceId:
           type: integer
         findingsCreated:
           type: integer
+        findingsUpdated:
+          type: integer
+        findingsInactivated:
+          type: integer
         recommendationsCreated:
           type: integer
+        runId:
+          type: string
+          format: uuid
 
     Finding:
       type: object
-      required: [id, orgId, dataSourceId, type, severity, title, description, estimatedImpact, status, createdAt]
+      required: [id, orgId, dataSourceId, type, severity, title, description, estimatedImpact, status, confidenceScore, detectionCount, firstDetectedAt, lastDetectedAt, createdAt]
       properties:
         id:
           type: integer
@@ -780,15 +841,40 @@ components:
         affectedEntity:
           type: ["string", "null"]
           description: Customer name, contract ID, or other entity identifier
+        entityKey:
+          type: ["string", "null"]
+          description: Normalized entity identifier used for trend grouping
         daysOverdue:
           type: ["integer", "null"]
         status:
           type: string
-          enum: [open, acknowledged, resolved, dismissed]
+          enum: [open, acknowledged, resolved, dismissed, inactive]
+        confidenceScore:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Detection confidence 0-100; rule-based detectors default to 100
+        detectionCount:
+          type: integer
+          description: Number of consecutive analysis runs that detected this condition
+        firstDetectedAt:
+          type: string
+          format: date-time
+        lastDetectedAt:
+          type: string
+          format: date-time
+        lastRunId:
+          type: ["string", "null"]
+          format: uuid
+        analystNote:
+          type: ["string", "null"]
         metadata:
           type: ["object", "null"]
           additionalProperties: true
         resolvedAt:
+          type: ["string", "null"]
+          format: date-time
+        dismissedAt:
           type: ["string", "null"]
           format: date-time
         createdAt:
@@ -804,10 +890,13 @@ components:
         status:
           type: string
           enum: [open, acknowledged, resolved, dismissed]
+        analystNote:
+          type: string
+          nullable: true
 
     Recommendation:
       type: object
-      required: [id, orgId, findingId, priority, title, description, estimatedRecovery, status, createdAt]
+      required: [id, orgId, findingId, priority, title, description, estimatedRecovery, status, generation, createdAt]
       properties:
         id:
           type: integer
@@ -831,6 +920,13 @@ components:
         status:
           type: string
           enum: [pending, in_progress, completed, dismissed]
+        generation:
+          type: integer
+          description: Incremented on each re-analysis update
+        supersededAt:
+          type: ["string", "null"]
+          format: date-time
+          description: Set when the parent finding becomes inactive; cleared on re-detection
         completedAt:
           type: ["string", "null"]
           format: date-time
@@ -855,3 +951,36 @@ components:
         file:
           type: string
           format: binary
+
+    AnalysisRun:
+      type: object
+      required: [id, orgId, dataSourceId, status, findingsCreated, findingsUpdated, findingsInactivated, startedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: integer
+        dataSourceId:
+          type: integer
+        triggeredBy:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [running, completed, failed]
+        rowsProcessed:
+          type: ["integer", "null"]
+        findingsCreated:
+          type: integer
+        findingsUpdated:
+          type: integer
+        findingsInactivated:
+          type: integer
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        errorMessage:
+          type: ["string", "null"]

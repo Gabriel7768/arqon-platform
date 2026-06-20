@@ -1,14 +1,63 @@
 import path from "path";
 import fs from "fs";
+import { createHash } from "crypto";
 import { parse } from "csv-parse/sync";
-import { db } from "@workspace/db";
-import { findingsTable, recommendationsTable, dataSourcesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and, lt, inArray, isNotNull, sql } from "drizzle-orm";
+import {
+  db,
+  findingsTable,
+  recommendationsTable,
+  dataSourcesTable,
+  analysisRunsTable,
+} from "@workspace/db";
 import { logger } from "./logger";
 
 interface CsvRow {
   [key: string]: string;
 }
+
+// ---------------------------------------------------------------------------
+// Entity normalization
+// ---------------------------------------------------------------------------
+
+const LEGAL_SUFFIXES = new Set([
+  "ltd", "ltda", "inc", "corp", "llc", "sa", "co",
+  "company", "limited", "corporation", "group", "holdings",
+  "pty", "plc", "gmbh", "bv", "nv", "ag", "sas", "srl", "lda",
+]);
+
+/**
+ * Normalize a raw entity name into a stable key used for fingerprinting
+ * and trend grouping. Strips punctuation, lowercases, and removes common
+ * legal suffixes so that "ACME LTDA", "Acme Ltda." and "ACME" all resolve
+ * to the same key ("acme").
+ */
+export function normalizeEntityKey(raw: string): string {
+  if (!raw || !raw.trim()) return "";
+
+  let s = raw.trim().toLowerCase();
+  s = s.replace(/[^a-z0-9\s]/g, " ");
+  s = s.replace(/\s+/g, " ").trim();
+
+  const words = s.split(" ");
+  while (words.length > 1 && LEGAL_SUFFIXES.has(words[words.length - 1])) {
+    words.pop();
+  }
+
+  return words.join(" ").trim() || s;
+}
+
+/**
+ * Compute a stable 16-character hex fingerprint from an ordered list of parts.
+ * Serves as the upsert identity key within (orgId, dataSourceId).
+ */
+export function computeFingerprint(parts: string[]): string {
+  return createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 16);
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function parseDate(val: string): Date | null {
   if (!val) return null;
@@ -63,14 +112,102 @@ function detectColumns(rows: CsvRow[]): {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Upsert helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Upsert a finding using (orgId, dataSourceId, fingerprint) as the conflict
+ * key. On conflict, updates only computed fields; analyst-owned fields
+ * (status, resolvedAt, dismissedAt, analystNote, assignedTo) are never
+ * overwritten. Re-opens findings that were system-set to 'inactive'.
+ */
+async function upsertFinding(
+  values: typeof findingsTable.$inferInsert,
+): Promise<{ id: number; isNew: boolean }> {
+  const [row] = await db
+    .insert(findingsTable)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [findingsTable.orgId, findingsTable.dataSourceId, findingsTable.fingerprint],
+      set: {
+        severity:         sql`excluded.severity`,
+        title:            sql`excluded.title`,
+        description:      sql`excluded.description`,
+        estimatedImpact:  sql`excluded.estimated_impact`,
+        daysOverdue:      sql`excluded.days_overdue`,
+        metadata:         sql`excluded.metadata`,
+        confidenceScore:  sql`excluded.confidence_score`,
+        entityKey:        sql`excluded.entity_key`,
+        lastDetectedAt:   sql`excluded.last_detected_at`,
+        lastRunId:        sql`excluded.last_run_id`,
+        detectionCount:   sql`${findingsTable.detectionCount} + 1`,
+        // Analyst-set statuses survive; only system 'inactive' is reset to 'open'
+        status: sql`CASE WHEN ${findingsTable.status} = 'inactive' THEN 'open' ELSE ${findingsTable.status} END`,
+        updatedAt:        sql`now()`,
+      },
+    })
+    .returning({ id: findingsTable.id, detectionCount: findingsTable.detectionCount });
+
+  // detectionCount == 1 ↔ fresh insert (no prior row existed)
+  // detectionCount  > 1 ↔ updated an existing row
+  return { id: row.id, isNew: row.detectionCount === 1 };
+}
+
+/**
+ * Upsert a recommendation keyed on findingId. Preserves analyst-owned fields
+ * (status, completedAt) on conflict; clears supersededAt so re-detected
+ * findings resurface in the active queue.
+ */
+async function upsertRecommendation(
+  values: typeof recommendationsTable.$inferInsert,
+): Promise<void> {
+  await db
+    .insert(recommendationsTable)
+    .values(values)
+    .onConflictDoUpdate({
+      target: [recommendationsTable.findingId],
+      set: {
+        priority:          sql`excluded.priority`,
+        title:             sql`excluded.title`,
+        description:       sql`excluded.description`,
+        estimatedRecovery: sql`excluded.estimated_recovery`,
+        actionLabel:       sql`excluded.action_label`,
+        generation:        sql`${recommendationsTable.generation} + 1`,
+        supersededAt:      sql`NULL`,
+        updatedAt:         sql`now()`,
+      },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+export interface AnalysisEngineResult {
+  findingsCreated: number;
+  findingsUpdated: number;
+  findingsInactivated: number;
+  recommendationsCreated: number;
+  runId: string;
+}
+
 export async function analyzeDataSource(
   dataSourceId: number,
   orgId: number,
-  filePath: string
-): Promise<{ findingsCreated: number; recommendationsCreated: number }> {
+  filePath: string,
+): Promise<AnalysisEngineResult> {
+  const runStart = new Date();
   let findingsCreated = 0;
+  let findingsUpdated = 0;
+  let findingsInactivated = 0;
   let recommendationsCreated = 0;
-  const now = new Date();
+
+  const [run] = await db
+    .insert(analysisRunsTable)
+    .values({ orgId, dataSourceId, status: "running" })
+    .returning({ id: analysisRunsTable.id });
+  const runId = run.id;
 
   try {
     const content = fs.readFileSync(filePath, "utf-8");
@@ -82,93 +219,89 @@ export async function analyzeDataSource(
 
     const cols = detectColumns(rows);
 
-    await db.delete(findingsTable).where(
-      eq(findingsTable.dataSourceId, dataSourceId)
-    );
-
     for (const row of rows) {
       const amount = cols.amountCol ? parseAmount(row[cols.amountCol]) : 0;
-      const customer = cols.customerCol ? row[cols.customerCol] : "Unknown";
+      const rawCustomer = cols.customerCol ? row[cols.customerCol] : "Unknown";
+      const customer = rawCustomer || "Unknown";
+      const entityKey = normalizeEntityKey(customer);
 
-      // 1. Overdue invoices detector
+      // ── 1. Overdue invoices ─────────────────────────────────────────────
       if (cols.dueDateCol) {
         const dueDate = parseDate(row[cols.dueDateCol]);
         const status = cols.statusCol ? row[cols.statusCol].toLowerCase() : "";
         const isPaid = ["paid", "closed", "completed", "won"].includes(status);
 
-        if (dueDate && !isPaid && dueDate < now) {
-          const days = daysBetween(dueDate, now);
+        if (dueDate && !isPaid && dueDate < runStart) {
+          const days = daysBetween(dueDate, runStart);
           if (days > 0 && amount > 0) {
             const severity = detectSeverity(amount);
-            const [finding] = await db.insert(findingsTable).values({
-              orgId,
-              dataSourceId,
-              type: "overdue_invoice",
-              severity,
+            const fingerprint = computeFingerprint([
+              "overdue_invoice",
+              entityKey,
+              dueDate.toISOString().split("T")[0],
+            ]);
+
+            const { id: findingId, isNew } = await upsertFinding({
+              orgId, dataSourceId, type: "overdue_invoice", severity,
               title: `Overdue invoice: ${customer}`,
               description: `Invoice of ${amount.toFixed(2)} is ${days} days past due for ${customer}.`,
               estimatedImpact: amount.toFixed(2),
-              affectedEntity: customer,
-              daysOverdue: days,
-              status: "open",
-              metadata: row,
-            }).returning();
-            findingsCreated++;
+              affectedEntity: customer, entityKey, fingerprint,
+              daysOverdue: days, status: "open", confidenceScore: 100,
+              lastDetectedAt: runStart, lastRunId: runId, metadata: row,
+            });
 
-            const [rec] = await db.insert(recommendationsTable).values({
-              orgId,
-              findingId: finding.id,
-              priority: getPriorityFromSeverity(severity),
+            if (isNew) findingsCreated++; else findingsUpdated++;
+
+            await upsertRecommendation({
+              orgId, findingId, priority: getPriorityFromSeverity(severity),
               title: `Follow up on overdue invoice from ${customer}`,
               description: `Send a payment reminder to ${customer} for the invoice of ${amount.toFixed(2)} that is ${days} days overdue. Consider escalating to collections if not resolved within 14 days.`,
               estimatedRecovery: amount.toFixed(2),
-              actionLabel: "Send Reminder",
-              status: "pending",
-            }).returning();
-            recommendationsCreated++;
+              actionLabel: "Send Reminder", status: "pending",
+            });
+
+            if (isNew) recommendationsCreated++;
           }
         }
       }
 
-      // 2. Inactive customers detector
+      // ── 2. Inactive customers ───────────────────────────────────────────
       if (cols.lastActivityCol && amount > 0) {
         const lastActivity = parseDate(row[cols.lastActivityCol]);
         if (lastActivity) {
-          const daysSince = daysBetween(lastActivity, now);
+          const daysSince = daysBetween(lastActivity, runStart);
           if (daysSince > 90) {
             const estimatedImpact = amount * 0.3;
             const severity = detectSeverity(estimatedImpact);
-            const [finding] = await db.insert(findingsTable).values({
-              orgId,
-              dataSourceId,
-              type: "inactive_customer",
-              severity,
+            const fingerprint = computeFingerprint(["inactive_customer", entityKey]);
+
+            const { id: findingId, isNew } = await upsertFinding({
+              orgId, dataSourceId, type: "inactive_customer", severity,
               title: `Inactive customer: ${customer}`,
               description: `${customer} has had no activity for ${daysSince} days. Last interaction: ${lastActivity.toLocaleDateString()}.`,
               estimatedImpact: estimatedImpact.toFixed(2),
-              affectedEntity: customer,
-              daysOverdue: daysSince,
-              status: "open",
-              metadata: row,
-            }).returning();
-            findingsCreated++;
+              affectedEntity: customer, entityKey, fingerprint,
+              daysOverdue: daysSince, status: "open", confidenceScore: 100,
+              lastDetectedAt: runStart, lastRunId: runId, metadata: row,
+            });
 
-            await db.insert(recommendationsTable).values({
-              orgId,
-              findingId: finding.id,
-              priority: getPriorityFromSeverity(severity),
+            if (isNew) findingsCreated++; else findingsUpdated++;
+
+            await upsertRecommendation({
+              orgId, findingId, priority: getPriorityFromSeverity(severity),
               title: `Re-engage inactive customer ${customer}`,
               description: `${customer} hasn't engaged in ${daysSince} days. Schedule a check-in call to understand their current needs and prevent churn.`,
-              estimatedRecovery: (amount * 0.3).toFixed(2),
-              actionLabel: "Schedule Call",
-              status: "pending",
+              estimatedRecovery: estimatedImpact.toFixed(2),
+              actionLabel: "Schedule Call", status: "pending",
             });
-            recommendationsCreated++;
+
+            if (isNew) recommendationsCreated++;
           }
         }
       }
 
-      // 3. Stalled opportunities detector
+      // ── 3. Stalled opportunities ────────────────────────────────────────
       if (cols.stageCol && cols.lastActivityCol && amount > 0) {
         const stage = row[cols.stageCol]?.toLowerCase() ?? "";
         const stalledStages = ["proposal", "negotiation", "demo", "qualified", "interested", "follow up"];
@@ -176,93 +309,139 @@ export async function analyzeDataSource(
         const lastActivity = parseDate(row[cols.lastActivityCol]);
 
         if (isStalled && lastActivity) {
-          const daysSince = daysBetween(lastActivity, now);
+          const daysSince = daysBetween(lastActivity, runStart);
           if (daysSince > 30) {
             const severity = detectSeverity(amount);
-            const [finding] = await db.insert(findingsTable).values({
-              orgId,
-              dataSourceId,
-              type: "stalled_opportunity",
-              severity,
+            const fingerprint = computeFingerprint([
+              "stalled_opportunity",
+              entityKey,
+              stage.trim(),
+            ]);
+
+            const { id: findingId, isNew } = await upsertFinding({
+              orgId, dataSourceId, type: "stalled_opportunity", severity,
               title: `Stalled opportunity: ${customer}`,
               description: `${customer} has been in "${row[cols.stageCol!]}" stage for ${daysSince} days without activity.`,
               estimatedImpact: amount.toFixed(2),
-              affectedEntity: customer,
-              daysOverdue: daysSince,
-              status: "open",
-              metadata: row,
-            }).returning();
-            findingsCreated++;
-
-            await db.insert(recommendationsTable).values({
-              orgId,
-              findingId: finding.id,
-              priority: getPriorityFromSeverity(severity),
-              title: `Revive stalled deal with ${customer}`,
-              description: `This deal worth ${amount.toFixed(2)} has been stalled in "${row[cols.stageCol!]}" for ${daysSince} days. Update stage or schedule a follow-up to keep the pipeline moving.`,
-              estimatedRecovery: (amount * 0.6).toFixed(2),
-              actionLabel: "Update Deal",
-              status: "pending",
+              affectedEntity: customer, entityKey, fingerprint,
+              daysOverdue: daysSince, status: "open", confidenceScore: 100,
+              lastDetectedAt: runStart, lastRunId: runId, metadata: row,
             });
-            recommendationsCreated++;
+
+            if (isNew) findingsCreated++; else findingsUpdated++;
+
+            await upsertRecommendation({
+              orgId, findingId, priority: getPriorityFromSeverity(severity),
+              title: `Revive stalled deal with ${customer}`,
+              description: `This deal worth ${amount.toFixed(2)} has been stalled in "${row[cols.stageCol!]}" for ${daysSince} days. Update stage or schedule a follow-up.`,
+              estimatedRecovery: (amount * 0.6).toFixed(2),
+              actionLabel: "Update Deal", status: "pending",
+            });
+
+            if (isNew) recommendationsCreated++;
           }
         }
       }
 
-      // 4. Contract expiration risk detector
+      // ── 4. Contract expiration ──────────────────────────────────────────
       if (cols.contractEndCol && amount > 0) {
         const contractEnd = parseDate(row[cols.contractEndCol]);
         if (contractEnd) {
-          const daysUntil = daysBetween(now, contractEnd);
+          const daysUntil = daysBetween(runStart, contractEnd);
           if (daysUntil >= 0 && daysUntil <= 90) {
             const severity = daysUntil <= 30 ? "critical" : daysUntil <= 60 ? "high" : "medium";
-            const [finding] = await db.insert(findingsTable).values({
-              orgId,
-              dataSourceId,
-              type: "contract_expiration",
-              severity,
+            const fingerprint = computeFingerprint([
+              "contract_expiration",
+              entityKey,
+              contractEnd.toISOString().split("T")[0],
+            ]);
+
+            const { id: findingId, isNew } = await upsertFinding({
+              orgId, dataSourceId, type: "contract_expiration", severity,
               title: `Contract expiring soon: ${customer}`,
               description: `Contract with ${customer} worth ${amount.toFixed(2)} expires in ${daysUntil} days on ${contractEnd.toLocaleDateString()}.`,
               estimatedImpact: amount.toFixed(2),
-              affectedEntity: customer,
-              daysOverdue: daysUntil,
-              status: "open",
-              metadata: row,
-            }).returning();
-            findingsCreated++;
+              affectedEntity: customer, entityKey, fingerprint,
+              daysOverdue: daysUntil, status: "open", confidenceScore: 100,
+              lastDetectedAt: runStart, lastRunId: runId, metadata: row,
+            });
 
-            await db.insert(recommendationsTable).values({
-              orgId,
-              findingId: finding.id,
-              priority: getPriorityFromSeverity(severity),
+            if (isNew) findingsCreated++; else findingsUpdated++;
+
+            await upsertRecommendation({
+              orgId, findingId, priority: getPriorityFromSeverity(severity),
               title: `Renew contract with ${customer}`,
               description: `Start the renewal conversation with ${customer} now — contract expires in ${daysUntil} days. Prepare renewal terms and schedule a meeting.`,
               estimatedRecovery: amount.toFixed(2),
-              actionLabel: "Start Renewal",
-              status: "pending",
+              actionLabel: "Start Renewal", status: "pending",
             });
-            recommendationsCreated++;
+
+            if (isNew) recommendationsCreated++;
           }
         }
       }
     }
 
-    await db.update(dataSourcesTable)
-      .set({
-        status: "ready",
-        rowCount: rows.length,
-        lastAnalyzedAt: now,
-        errorMessage: null,
-      })
+    // ── Stale sweep ─────────────────────────────────────────────────────────
+    // Persistent findings (fingerprint IS NOT NULL) that were not detected in
+    // this run are marked 'inactive'. Only open/acknowledged are affected;
+    // analyst decisions (resolved, dismissed) are preserved.
+    const staleRows = await db
+      .update(findingsTable)
+      .set({ status: "inactive" })
+      .where(
+        and(
+          eq(findingsTable.dataSourceId, dataSourceId),
+          lt(findingsTable.lastDetectedAt, runStart),
+          isNotNull(findingsTable.fingerprint),
+          sql`${findingsTable.status} IN ('open', 'acknowledged')`,
+        ),
+      )
+      .returning({ id: findingsTable.id });
+
+    findingsInactivated = staleRows.length;
+
+    if (staleRows.length > 0) {
+      await db
+        .update(recommendationsTable)
+        .set({ supersededAt: runStart })
+        .where(
+          and(
+            inArray(recommendationsTable.findingId, staleRows.map((r) => r.id)),
+            sql`${recommendationsTable.status} NOT IN ('completed', 'dismissed')`,
+          ),
+        );
+    }
+
+    await db
+      .update(dataSourcesTable)
+      .set({ status: "ready", rowCount: rows.length, lastAnalyzedAt: runStart, errorMessage: null })
       .where(eq(dataSourcesTable.id, dataSourceId));
+
+    await db
+      .update(analysisRunsTable)
+      .set({
+        status: "completed", rowsProcessed: rows.length,
+        findingsCreated, findingsUpdated, findingsInactivated,
+        completedAt: new Date(),
+      })
+      .where(eq(analysisRunsTable.id, runId));
 
   } catch (err) {
     logger.error({ err, dataSourceId }, "Revenue engine analysis failed");
-    await db.update(dataSourcesTable)
+
+    await db
+      .update(dataSourcesTable)
       .set({ status: "error", errorMessage: String(err) })
       .where(eq(dataSourcesTable.id, dataSourceId));
+
+    await db
+      .update(analysisRunsTable)
+      .set({ status: "failed", errorMessage: String(err), completedAt: new Date() })
+      .where(eq(analysisRunsTable.id, runId));
+
     throw err;
   }
 
-  return { findingsCreated, recommendationsCreated };
+  return { findingsCreated, findingsUpdated, findingsInactivated, recommendationsCreated, runId };
 }

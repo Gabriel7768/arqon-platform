@@ -9,4 +9,5 @@ import type { FindingUpdateStatus } from './findingUpdateStatus';
 
 export interface FindingUpdate {
   status?: FindingUpdateStatus;
+  analystNote?: string | null;
 }

@@ -7,6 +7,8 @@
  */
 
 export * from './analysisResult';
+export * from './analysisRun';
+export * from './analysisRunStatus';
 export * from './authResponse';
 export * from './csvUploadInput';
 export * from './dataSource';
