@@ -1,0 +1,116 @@
+P0-2 IMPLEMENTATION PLANNING
+
+Context:
+
+ARQON Revenue Engine has completed:
+
+* P0-1 Security (IDOR protection)
+* P0-4 Severity consistency
+
+We are now implementing:
+
+P0-2 Persistent Findings Architecture
+
+Before writing code, perform a full implementation design review.
+
+Objectives:
+
+1. Validate the proposed architecture.
+2. Identify implementation risks.
+3. Produce a detailed implementation plan.
+4. Estimate database migrations.
+5. Estimate API changes.
+6. Estimate test changes.
+7. Estimate rollback strategy.
+
+Use the previously approved architecture as baseline.
+
+Additional architectural decisions:
+
+* Findings must be persistent entities.
+* Re-analysis must never destroy analyst work.
+* DELETE + INSERT must be completely removed.
+* Upsert-based lifecycle is required.
+* Findings must support future Executive Intelligence features.
+* Findings must support historical trend analysis.
+* Recommendations must never become orphaned.
+* Future AI layers must be able to use finding history.
+
+Additional requirements:
+
+1. Replace affectedEntity fingerprint inputs with normalized entity_key values.
+
+Example:
+
+"ACME LTDA"
+"Acme Ltda."
+"ACME"
+
+must resolve to the same entity_key.
+
+2. Add confidence_score support to findings.
+
+Range:
+0-100
+
+Purpose:
+Future AI-assisted confidence calculations.
+
+3. Replace auto_resolved status proposal.
+
+Use:
+
+open
+acknowledged
+resolved
+dismissed
+inactive
+
+Reason:
+The system can detect that a condition disappeared.
+The system cannot guarantee that the issue was actually resolved.
+
+4. Add analysis_run_id support.
+
+Every analysis execution must generate a unique run identifier.
+
+Future use:
+
+* trend analysis
+* Executive Intelligence
+* historical comparisons
+* reporting
+
+Deliverables:
+
+Produce a technical implementation document containing:
+
+A. Final database schema changes
+
+B. Migration strategy
+
+C. Revenue Engine modifications
+
+D. Recommendation lifecycle design
+
+E. Analysis run lifecycle
+
+F. Entity normalization strategy
+
+G. Confidence score strategy
+
+H. API changes
+
+I. OpenAPI changes
+
+J. Test strategy
+
+K. Rollback strategy
+
+L. Risks and mitigations
+
+Do not modify code.
+
+Design only.
+
+Output a complete implementation plan suitable for production execution.
