@@ -1,0 +1,174 @@
+Implement P0-3 from the ARQON Revenue Engine Remediation Roadmap.
+
+GOAL
+
+Eliminate revenue double-counting while preserving detector-level insights.
+
+IMPORTANT
+
+Do NOT solve this by:
+
+- dividing impact across findings
+- setting impact to zero
+- hiding findings
+
+Each finding must keep its own detector impact.
+
+PROBLEM
+
+Today a single entity can generate multiple findings.
+
+Example:
+
+Customer ABC
+Amount = 100000
+
+Overdue Invoice:
+estimatedImpact = 100000
+
+Inactive Customer:
+estimatedImpact = 30000
+
+Contract Risk:
+estimatedImpact = 100000
+
+Dashboard currently sums findings and reports:
+
+230000
+
+Real exposure is:
+
+100000
+
+REQUIRED DESIGN
+
+Introduce a distinction between:
+
+1. Detector Impact
+2. Revenue Exposure
+
+Definitions
+
+Detector Impact
+
+How much revenue a detector believes is at risk.
+
+Keep current behavior.
+
+Revenue Exposure
+
+How much real revenue is exposed for an entity.
+
+This value must only be counted once.
+
+IMPLEMENTATION
+
+Before writing code:
+
+1. Audit current dashboard calculations.
+2. Identify every place where estimatedImpact is aggregated.
+3. Produce implementation plan.
+
+DATA MODEL
+
+Create a canonical exposure model.
+
+For each entity:
+
+entityRevenueExposure
+
+Example:
+
+Customer ABC
+100000
+
+Customer XYZ
+50000
+
+Dashboard revenue totals must aggregate:
+
+entityRevenueExposure
+
+NOT
+
+estimatedImpact
+
+FINDINGS
+
+Keep:
+
+estimatedImpact
+
+unchanged.
+
+Do not alter detector behavior.
+
+DASHBOARD
+
+Replace all revenue-at-risk calculations with exposure-based calculations.
+
+Exposure must be counted once per:
+
+- org
+- data source
+- entity
+
+ANALYSIS ENGINE
+
+Generate and persist exposure information during analysis.
+
+If multiple findings exist for the same entity:
+
+Revenue exposure must only be stored once.
+
+TESTS
+
+Case A
+
+One finding
+100k
+
+Dashboard:
+100k
+
+Case B
+
+Three findings
+same entity
+100k
+
+Dashboard:
+100k
+
+Case C
+
+Two entities
+
+100k
+50k
+
+Dashboard:
+150k
+
+Case D
+
+Entity disappears after re-analysis
+
+Exposure removed.
+
+Case E
+
+Entity reappears
+
+Exposure restored.
+
+SUCCESS CRITERIA
+
+- No revenue inflation.
+- Detector impact preserved.
+- Dashboard numbers match real exposure.
+- Existing tests remain green.
+- Add dedicated Vitest coverage.
+
+Do not implement integrations.
+Focus only on P0-3.

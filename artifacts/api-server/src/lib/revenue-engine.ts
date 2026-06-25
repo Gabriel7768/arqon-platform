@@ -9,6 +9,7 @@ import {
   recommendationsTable,
   dataSourcesTable,
   analysisRunsTable,
+  entityExposuresTable,
 } from "@workspace/db";
 import { logger } from "./logger";
 
@@ -113,7 +114,7 @@ function detectColumns(rows: CsvRow[]): {
 }
 
 // ---------------------------------------------------------------------------
-// Upsert helpers
+// Upsert helpers — findings
 // ---------------------------------------------------------------------------
 
 /**
@@ -219,6 +220,22 @@ export async function analyzeDataSource(
 
     const cols = detectColumns(rows);
 
+    /**
+     * Entity exposure accumulator — keyed by entityKey.
+     * Tracks the raw CSV amount (before any detector-specific scaling)
+     * for each entity that triggered at least one finding.
+     * Only the MAX amount across all detector triggers is stored, so that
+     * the same entity's full revenue value is counted once.
+     */
+    const entityAccumulator = new Map<string, { rawAmount: number; displayName: string }>();
+
+    function accumulateExposure(entityKey: string, displayName: string, rawAmount: number) {
+      const cur = entityAccumulator.get(entityKey);
+      if (!cur || rawAmount > cur.rawAmount) {
+        entityAccumulator.set(entityKey, { rawAmount, displayName });
+      }
+    }
+
     for (const row of rows) {
       const amount = cols.amountCol ? parseAmount(row[cols.amountCol]) : 0;
       const rawCustomer = cols.customerCol ? row[cols.customerCol] : "Unknown";
@@ -262,6 +279,9 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
+
+            // Exposure: raw invoice amount (not scaled)
+            accumulateExposure(entityKey, customer, amount);
           }
         }
       }
@@ -297,6 +317,9 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
+
+            // Exposure: raw customer amount (NOT the 0.3× scaled impact)
+            accumulateExposure(entityKey, customer, amount);
           }
         }
       }
@@ -339,6 +362,9 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
+
+            // Exposure: raw deal amount
+            accumulateExposure(entityKey, customer, amount);
           }
         }
       }
@@ -377,12 +403,42 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
+
+            // Exposure: raw contract amount
+            accumulateExposure(entityKey, customer, amount);
           }
         }
       }
     }
 
-    // ── Stale sweep ─────────────────────────────────────────────────────────
+    // ── Entity exposure upsert ──────────────────────────────────────────────
+    // Persist one exposure record per entity. Existing records are re-activated
+    // and have their amount updated if the raw value changed.
+    for (const [entityKey, { rawAmount, displayName }] of entityAccumulator) {
+      await db
+        .insert(entityExposuresTable)
+        .values({
+          orgId,
+          dataSourceId,
+          entityKey,
+          affectedEntity: displayName,
+          amount: rawAmount.toFixed(2),
+          active: true,
+          lastSeenAt: runStart,
+        })
+        .onConflictDoUpdate({
+          target: [entityExposuresTable.orgId, entityExposuresTable.dataSourceId, entityExposuresTable.entityKey],
+          set: {
+            affectedEntity: sql`excluded.affected_entity`,
+            amount:          sql`excluded.amount`,
+            active:          sql`true`,
+            lastSeenAt:      sql`excluded.last_seen_at`,
+            updatedAt:       sql`now()`,
+          },
+        });
+    }
+
+    // ── Finding stale sweep ─────────────────────────────────────────────────
     // Persistent findings (fingerprint IS NOT NULL) that were not detected in
     // this run are marked 'inactive'. Only open/acknowledged are affected;
     // analyst decisions (resolved, dismissed) are preserved.
@@ -412,6 +468,20 @@ export async function analyzeDataSource(
           ),
         );
     }
+
+    // ── Exposure stale sweep ────────────────────────────────────────────────
+    // Entity exposures whose entities were absent from this run are deactivated.
+    // They are excluded from dashboard totals until the entity reappears.
+    await db
+      .update(entityExposuresTable)
+      .set({ active: false })
+      .where(
+        and(
+          eq(entityExposuresTable.dataSourceId, dataSourceId),
+          lt(entityExposuresTable.lastSeenAt, runStart),
+          eq(entityExposuresTable.active, true),
+        ),
+      );
 
     await db
       .update(dataSourcesTable)

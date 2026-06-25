@@ -1,6 +1,13 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, organizationsTable, usersTable, findingsTable, recommendationsTable } from "@workspace/db";
+import {
+  db,
+  organizationsTable,
+  usersTable,
+  findingsTable,
+  recommendationsTable,
+  entityExposuresTable,
+} from "@workspace/db";
 import {
   CreateOrganizationBody,
   UpdateOrganizationBody,
@@ -153,14 +160,40 @@ router.get("/organizations/:id/stats", orgGuard, async (req, res): Promise<void>
 
   const orgId = params.data.id;
 
-  const findings = await db.select().from(findingsTable).where(eq(findingsTable.orgId, orgId));
-  const recs = await db.select().from(recommendationsTable).where(eq(recommendationsTable.orgId, orgId));
+  // Run queries in parallel for speed
+  const [findings, recs, [exposureRow]] = await Promise.all([
+    db.select().from(findingsTable).where(eq(findingsTable.orgId, orgId)),
+    db.select().from(recommendationsTable).where(eq(recommendationsTable.orgId, orgId)),
+    db
+      .select({
+        totalExposure: sql<string>`COALESCE(SUM(${entityExposuresTable.amount}), 0)`,
+      })
+      .from(entityExposuresTable)
+      .where(
+        and(
+          eq(entityExposuresTable.orgId, orgId),
+          eq(entityExposuresTable.active, true),
+        ),
+      ),
+  ]);
 
   const openFindings = findings.filter((f) => f.status === "open" || f.status === "acknowledged");
   const resolvedFindings = findings.filter((f) => f.status === "resolved");
 
-  const totalAtRisk = openFindings.reduce((sum, f) => sum + parseFloat(String(f.estimatedImpact) || "0"), 0);
+  /**
+   * totalAtRisk = SUM of entity_exposures.amount for active exposures.
+   *
+   * Each entity is counted once regardless of how many detectors fired.
+   * This eliminates double-counting when e.g. both "overdue invoice" and
+   * "inactive customer" fire for the same $100k account.
+   *
+   * The per-type and per-severity breakdowns below keep detector-level
+   * estimated_impact so the analyst can see which detector contributed
+   * what signal.
+   */
+  const totalAtRisk = parseFloat(String(exposureRow?.totalExposure ?? "0"));
 
+  // Detector-level breakdown (intentionally keeps per-finding impact values)
   const byTypeMap: Record<string, { count: number; totalAtRisk: number }> = {};
   for (const f of openFindings) {
     if (!byTypeMap[f.type]) byTypeMap[f.type] = { count: 0, totalAtRisk: 0 };
