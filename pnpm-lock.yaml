@@ -172,6 +172,9 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/column-detection-engine':
+        specifier: workspace:*
+        version: link:../../lib/column-detection-engine
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
@@ -638,6 +641,15 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+
+  lib/column-detection-engine:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 25.6.2
+      vitest:
+        specifier: ^4.1.9
+        version: 4.1.9(@types/node@25.6.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.4)
 
   lib/db:
     dependencies:

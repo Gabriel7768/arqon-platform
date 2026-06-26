@@ -11,6 +11,7 @@ import {
   analysisRunsTable,
   entityExposuresTable,
 } from "@workspace/db";
+import { detectSchemaMapping, getColumn } from "@workspace/column-detection-engine";
 import { logger } from "./logger";
 
 interface CsvRow {
@@ -86,7 +87,11 @@ function getPriorityFromSeverity(severity: string): "critical" | "high" | "mediu
   return severity as "critical" | "high" | "medium" | "low";
 }
 
-function detectColumns(rows: CsvRow[]): {
+// ---------------------------------------------------------------------------
+// Column detection — delegates to @workspace/column-detection-engine
+// ---------------------------------------------------------------------------
+
+interface DetectedColumns {
   amountCol?: string;
   dateCol?: string;
   customerCol?: string;
@@ -95,21 +100,40 @@ function detectColumns(rows: CsvRow[]): {
   lastActivityCol?: string;
   contractEndCol?: string;
   stageCol?: string;
-} {
+}
+
+/**
+ * Detect semantic column mappings using the Column Detection Engine.
+ *
+ * The engine handles normalization, synonym matching, abbreviation expansion,
+ * confidence scoring, and conflict resolution. The revenue engine has zero
+ * column-detection logic of its own.
+ */
+function detectColumns(rows: CsvRow[]): DetectedColumns {
   if (rows.length === 0) return {};
-  const keys = Object.keys(rows[0]);
-  const find = (patterns: RegExp[]) =>
-    keys.find((k) => patterns.some((p) => p.test(k.toLowerCase())));
+
+  const columnNames = Object.keys(rows[0]);
+  const result = detectSchemaMapping(columnNames);
 
   return {
-    amountCol: find([/amount|value|revenue|price|total|sum|arr|mrr/]),
-    dateCol: find([/date|created|issued/]),
-    customerCol: find([/customer|client|company|account|name|contact/]),
-    statusCol: find([/status|state|stage/]),
-    dueDateCol: find([/due.?date|due.?at|payment.?date/]),
-    lastActivityCol: find([/last.?activity|last.?contact|updated.?at|last.?seen/]),
-    contractEndCol: find([/contract.?end|expir|renewal|end.?date/]),
-    stageCol: find([/stage|phase|pipeline/]),
+    amountCol: getColumn(result, "amount")
+      ?? getColumn(result, "invoiceAmount")
+      ?? getColumn(result, "contractValue")
+      ?? getColumn(result, "arr")
+      ?? getColumn(result, "mrr"),
+    dateCol: getColumn(result, "invoiceDate")
+      ?? getColumn(result, "createdAt"),
+    customerCol: getColumn(result, "customer"),
+    statusCol: getColumn(result, "paymentStatus")
+      ?? getColumn(result, "invoiceStatus")
+      ?? getColumn(result, "status"),
+    dueDateCol: getColumn(result, "dueDate"),
+    lastActivityCol: getColumn(result, "lastActivity")
+      ?? getColumn(result, "lastContact")
+      ?? getColumn(result, "updatedAt"),
+    contractEndCol: getColumn(result, "contractEnd")
+      ?? getColumn(result, "renewalDate"),
+    stageCol: getColumn(result, "pipelineStage"),
   };
 }
 
@@ -143,15 +167,12 @@ async function upsertFinding(
         lastDetectedAt:   sql`excluded.last_detected_at`,
         lastRunId:        sql`excluded.last_run_id`,
         detectionCount:   sql`${findingsTable.detectionCount} + 1`,
-        // Analyst-set statuses survive; only system 'inactive' is reset to 'open'
         status: sql`CASE WHEN ${findingsTable.status} = 'inactive' THEN 'open' ELSE ${findingsTable.status} END`,
         updatedAt:        sql`now()`,
       },
     })
     .returning({ id: findingsTable.id, detectionCount: findingsTable.detectionCount });
 
-  // detectionCount == 1 ↔ fresh insert (no prior row existed)
-  // detectionCount  > 1 ↔ updated an existing row
   return { id: row.id, isNew: row.detectionCount === 1 };
 }
 
@@ -279,8 +300,6 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
-
-            // Exposure: raw invoice amount (not scaled)
             accumulateExposure(entityKey, customer, amount);
           }
         }
@@ -317,7 +336,6 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
-
             // Exposure: raw customer amount (NOT the 0.3× scaled impact)
             accumulateExposure(entityKey, customer, amount);
           }
@@ -362,8 +380,6 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
-
-            // Exposure: raw deal amount
             accumulateExposure(entityKey, customer, amount);
           }
         }
@@ -403,8 +419,6 @@ export async function analyzeDataSource(
             });
 
             if (isNew) recommendationsCreated++;
-
-            // Exposure: raw contract amount
             accumulateExposure(entityKey, customer, amount);
           }
         }
@@ -412,8 +426,6 @@ export async function analyzeDataSource(
     }
 
     // ── Entity exposure upsert ──────────────────────────────────────────────
-    // Persist one exposure record per entity. Existing records are re-activated
-    // and have their amount updated if the raw value changed.
     for (const [entityKey, { rawAmount, displayName }] of entityAccumulator) {
       await db
         .insert(entityExposuresTable)
@@ -439,9 +451,6 @@ export async function analyzeDataSource(
     }
 
     // ── Finding stale sweep ─────────────────────────────────────────────────
-    // Persistent findings (fingerprint IS NOT NULL) that were not detected in
-    // this run are marked 'inactive'. Only open/acknowledged are affected;
-    // analyst decisions (resolved, dismissed) are preserved.
     const staleRows = await db
       .update(findingsTable)
       .set({ status: "inactive" })
@@ -470,8 +479,6 @@ export async function analyzeDataSource(
     }
 
     // ── Exposure stale sweep ────────────────────────────────────────────────
-    // Entity exposures whose entities were absent from this run are deactivated.
-    // They are excluded from dashboard totals until the entity reappears.
     await db
       .update(entityExposuresTable)
       .set({ active: false })

@@ -1,0 +1,480 @@
+# ARQON Architecture Refactoring — Build a Reusable Column Detection Engine
+
+Before implementing P1-3, stop and refactor the architecture.
+
+Do **not** improve the existing regex-based column detection inside the Revenue Engine.
+
+Instead, extract it into a standalone reusable package.
+
+## Goal
+
+Create a production-grade **Column Detection Engine** that becomes the single source of truth for every data import in ARQON.
+
+This engine must be completely independent from the Revenue Engine and reusable by every future connector.
+
+Expected package:
+
+packages/
+column-detection-engine/
+
+The Revenue Engine must consume this package instead of containing its own detection logic.
+
+Future integrations (HubSpot, Stripe, Pipedrive, Google Sheets, QuickBooks, ERP connectors, CSV imports, APIs) must also consume this exact package without duplicating logic.
+
+---
+
+# Responsibilities
+
+The Column Detection Engine must be responsible for:
+
+• automatic column detection
+
+• confidence scoring
+
+• conflict detection
+
+• ambiguity resolution
+
+• synonym matching
+
+• normalization
+
+• manual override support
+
+• validation
+
+• mapping explanation
+
+• mapping diagnostics
+
+It must not contain any business logic related to revenue, findings, invoices, opportunities, recommendations, or financial calculations.
+
+Its only responsibility is semantic schema detection.
+
+---
+
+# Required Architecture
+
+Create a modular architecture similar to:
+
+packages/
+column-detection-engine/
+src/
+
+constants/
+
+dictionary/
+
+normalizers/
+
+scoring/
+
+matching/
+
+conflicts/
+
+validators/
+
+types/
+
+diagnostics/
+
+engine/
+
+index.ts
+
+Every module must have a single responsibility.
+
+---
+
+# Detection Flow
+
+The engine must execute the following pipeline:
+
+1.
+
+Normalize all incoming column names
+
+↓
+
+2.
+
+Remove punctuation
+
+↓
+
+3.
+
+Normalize casing
+
+↓
+
+4.
+
+Normalize separators
+
+↓
+
+5.
+
+Expand abbreviations
+
+↓
+
+6.
+
+Apply synonym dictionaries
+
+↓
+
+7.
+
+Generate candidate mappings
+
+↓
+
+8.
+
+Calculate confidence score
+
+↓
+
+9.
+
+Resolve conflicts
+
+↓
+
+10.
+
+Validate mapping
+
+↓
+
+11.
+
+Generate diagnostics
+
+↓
+
+12.
+
+Return immutable detection result
+
+---
+
+# Supported Business Concepts
+
+The engine should understand concepts instead of literal names.
+
+Examples include:
+
+Customer
+
+Amount
+
+Invoice Amount
+
+Revenue
+
+Contract Value
+
+MRR
+
+ARR
+
+Due Date
+
+Invoice Date
+
+Contract Start
+
+Contract End
+
+Renewal Date
+
+Last Activity
+
+Last Contact
+
+Created At
+
+Updated At
+
+Status
+
+Invoice Status
+
+Payment Status
+
+Pipeline Stage
+
+Owner
+
+Company
+
+Customer Email
+
+Opportunity
+
+Deal
+
+Probability
+
+Currency
+
+Region
+
+Country
+
+Sales Rep
+
+Product
+
+SKU
+
+Subscription
+
+Plan
+
+Invoice Number
+
+Contract ID
+
+Opportunity ID
+
+Customer ID
+
+The architecture must allow additional concepts without changing the engine core.
+
+---
+
+# Confidence Model
+
+Every mapping must return:
+
+confidenceScore
+
+confidenceLevel
+
+matchReason
+
+matchedDictionaryEntry
+
+matchedNormalizer
+
+conflicts
+
+alternativeMatches
+
+Example:
+
+{
+concept: "Due Date",
+detectedColumn: "payment_due",
+confidence: 0.97,
+confidenceLevel: "HIGH",
+reason: [
+"dictionary",
+"exact synonym",
+"normalized"
+]
+}
+
+---
+
+# Conflict Resolution
+
+The engine must detect situations such as:
+
+Status
+
+Payment Status
+
+Invoice Status
+
+Pipeline Stage
+
+where multiple concepts compete for the same column.
+
+Never silently choose one.
+
+Return:
+
+Detected conflict
+
+Competing concepts
+
+Confidence of each
+
+Recommended mapping
+
+Manual override options
+
+---
+
+# Diagnostics
+
+Return a detailed report including:
+
+Detected concepts
+
+Missing concepts
+
+Confidence distribution
+
+Unknown columns
+
+Conflicts
+
+Warnings
+
+Coverage percentage
+
+Columns ignored
+
+Suggestions
+
+This report will be displayed in the UI before import execution.
+
+---
+
+# Manual Overrides
+
+The engine must support user-defined mappings.
+
+User mappings must always override automatic detection.
+
+Automatic detection must never overwrite manual mappings.
+
+---
+
+# Extensibility
+
+The engine must be fully data-driven.
+
+Adding support for a new ERP, CRM or Accounting platform should require only extending dictionaries and concept definitions.
+
+No engine code should need modification.
+
+---
+
+# Testing Requirements
+
+Create comprehensive automated tests covering:
+
+Exact matches
+
+Synonyms
+
+Abbreviations
+
+Case differences
+
+Spacing differences
+
+Underscores
+
+Hyphens
+
+Plural forms
+
+Unknown columns
+
+Conflicting columns
+
+Manual overrides
+
+Confidence scoring
+
+Large schemas
+
+Duplicate names
+
+Empty schemas
+
+Missing required columns
+
+Random column order
+
+Regression tests
+
+Edge cases
+
+The engine should achieve deterministic outputs.
+
+---
+
+# Non-Functional Requirements
+
+Strict TypeScript
+
+No duplicated logic
+
+Pure functions where possible
+
+100% deterministic behavior
+
+Fully unit tested
+
+High cohesion
+
+Low coupling
+
+Reusable by every future integration
+
+No Revenue Engine knowledge
+
+No UI knowledge
+
+No API knowledge
+
+No database knowledge
+
+---
+
+# Success Criteria
+
+The Revenue Engine must consume the new package with zero business logic duplication.
+
+The package must be reusable without modification by:
+
+• CSV Import
+
+• HubSpot
+
+• Stripe
+
+• Pipedrive
+
+• Google Sheets
+
+• QuickBooks
+
+• ERP integrations
+
+• Future connectors
+
+---
+
+Before writing code:
+
+1. Audit the current implementation.
+
+2. Design the new package architecture.
+
+3. Identify migration risks.
+
+4. Produce an implementation plan.
+
+5. Only then begin the refactor.
+
+Do not take shortcuts.
+
+Do not introduce breaking changes.
+
+Maintain backward compatibility during the migration.
+
+Do not simplify the architecture.
+
+Treat this package as a core platform component that will remain stable for years.

@@ -2,3 +2,4 @@
 - [P0-2 persistent findings](p02-persistent-findings.md) — upsert engine: fingerprint=(sha256 of [type,entityKey,discriminator]).slice(0,16); stale sweep marks open/acknowledged as inactive; analyst statuses preserved
 - [Drizzle onConflictDoUpdate](drizzle-upsert.md) — use sql excluded.col for new value, sql table.col for existing; $onUpdate hook does NOT fire on conflict; set updatedAt explicitly
 - [P0-3 entity exposure model](p03-entity-exposure.md) — canonical exposure table eliminates dashboard double-counting; dashboard totalAtRisk uses SUM(entity_exposures.amount) not SUM(findings.estimated_impact)
+- [Column Detection Engine lib](column-detection-engine.md) — standalone `@workspace/column-detection-engine`; `invoiceAmount` wins over generic `amount` for "invoice_amount" / "invoice.amount" inputs — test against specific concept first
