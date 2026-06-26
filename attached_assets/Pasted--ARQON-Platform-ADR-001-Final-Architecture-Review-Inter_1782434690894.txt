@@ -1,0 +1,513 @@
+# ARQON Platform — ADR-001
+
+## Final Architecture Review — Internationalization Platform (Architecture Freeze)
+
+Before writing any implementation code, stop.
+
+Do not create files.
+
+Do not modify existing code.
+
+Do not install packages.
+
+Do not migrate components.
+
+Do not generate translations.
+
+Your only objective is to produce the definitive architecture specification for the ARQON Internationalization Platform.
+
+This document will become the official architecture reference for the entire project.
+
+After this document is approved, the architecture must be considered frozen.
+
+Future implementation must follow this specification.
+
+---
+
+# Context
+
+During Phase 1 you completed a complete audit of the frontend.
+
+That audit identified:
+
+* all hardcoded strings
+* localization risks
+* duplicated logic
+* formatting limitations
+* scalability issues
+* migration strategy
+
+Now perform the final architecture review before implementation begins.
+
+This is an architecture exercise.
+
+Not an implementation exercise.
+
+---
+
+# Important Change
+
+Replace every previous proposal that places the localization module inside:
+
+lib/i18n
+
+The final architecture must instead use:
+
+packages/i18n
+
+This package must become a platform service.
+
+It must not depend on:
+
+* React
+* Revenue Engine
+* API
+* Database
+* Authentication
+* UI components
+
+React integration must exist only as an adapter layer.
+
+---
+
+# Review Every Architectural Decision
+
+Review and validate every proposed module.
+
+Challenge your own design.
+
+Remove unnecessary complexity.
+
+Split modules that have multiple responsibilities.
+
+Merge modules that overlap.
+
+The objective is maximum cohesion and minimum coupling.
+
+---
+
+# Expected Package
+
+packages/
+
+i18n/
+
+The review must validate every directory and justify its existence.
+
+Expected areas include (adjust if you find a better design):
+
+src/
+
+core/
+registry/
+providers/
+hooks/
+formatters/
+loaders/
+cache/
+fallback/
+middleware/
+validators/
+scanner/
+cli/
+testing/
+types/
+utils/
+adapters/
+
+locales/
+
+pt-BR/
+en-US/
+es-ES/
+fr-FR/
+
+---
+
+# Registry Review
+
+Review whether a Translation Registry should become the heart of the platform.
+
+Describe responsibilities.
+
+Dictionary lifecycle.
+
+Cache lifecycle.
+
+Namespace resolution.
+
+Fallback chain.
+
+Tenant override precedence.
+
+Memory ownership.
+
+---
+
+# Scanner Review
+
+Review the need for a Scanner module.
+
+It should detect:
+
+hardcoded strings
+
+unused keys
+
+duplicated keys
+
+broken interpolation
+
+missing locales
+
+invalid JSON
+
+dead namespaces
+
+missing translations
+
+orphan dictionaries
+
+Evaluate whether the scanner belongs inside the package or the CLI.
+
+---
+
+# CLI Review
+
+Review whether the platform should expose commands such as:
+
+i18n scan
+
+i18n extract
+
+i18n validate
+
+i18n coverage
+
+i18n unused
+
+i18n doctor
+
+If yes, define responsibilities for each command.
+
+---
+
+# Loader Review
+
+Review dictionary loading.
+
+Compare:
+
+Static imports
+
+Dynamic imports
+
+HTTP loading
+
+CDN loading
+
+Hybrid loading
+
+Recommend the architecture best suited for ARQON.
+
+---
+
+# Cache Review
+
+Review:
+
+Memory cache
+
+Persistent cache
+
+Versioning
+
+Invalidation
+
+Tenant cache isolation
+
+Namespace cache isolation
+
+---
+
+# Formatter Review
+
+Review formatter architecture.
+
+Currency
+
+Numbers
+
+Percentages
+
+Dates
+
+DateTime
+
+Relative time
+
+Lists
+
+Enums
+
+Booleans
+
+Duration
+
+Ensure no formatter depends on React.
+
+---
+
+# Adapter Layer
+
+Review whether adapters should exist for:
+
+React
+
+Email
+
+PDF
+
+AI
+
+Backend
+
+Workers
+
+CLI
+
+Future mobile application
+
+If adapters are appropriate, define boundaries.
+
+---
+
+# White-label Review
+
+Review tenant override architecture.
+
+Terminology overrides.
+
+Brand overrides.
+
+Dictionary overrides.
+
+Locale inheritance.
+
+Conflict resolution.
+
+---
+
+# Future AI Review
+
+Review how future AI-generated content should integrate.
+
+The AI must never return hardcoded English.
+
+Recommend whether AI should return:
+
+translation keys
+
+structured payloads
+
+localized text
+
+or hybrid responses.
+
+Justify the decision.
+
+---
+
+# Future PDF Review
+
+Review how PDF generation should consume the same localization platform.
+
+No duplicated localization logic is allowed.
+
+---
+
+# Future Notification Review
+
+Review notification localization.
+
+Email
+
+Push
+
+In-app
+
+SMS
+
+Webhook payloads
+
+---
+
+# Performance Review
+
+Evaluate:
+
+lookup complexity
+
+memory footprint
+
+bundle splitting
+
+lazy loading
+
+cache invalidation
+
+dictionary merging
+
+runtime allocations
+
+React re-render behavior
+
+Target:
+
+O(1) translation lookup.
+
+---
+
+# Security Review
+
+Review:
+
+dictionary injection
+
+tenant override validation
+
+invalid placeholders
+
+unsafe HTML
+
+XSS risks
+
+prototype pollution
+
+runtime validation
+
+---
+
+# Testing Review
+
+Review automated testing architecture.
+
+Unit
+
+Integration
+
+Regression
+
+Snapshot
+
+Coverage
+
+Performance
+
+Property-based tests
+
+---
+
+# Dependency Graph
+
+Produce the final dependency graph.
+
+Every module.
+
+Every dependency.
+
+No circular dependencies allowed.
+
+---
+
+# Public API Review
+
+Design the final public API.
+
+Examples:
+
+t()
+
+useTranslation()
+
+useLocale()
+
+useFormatter()
+
+createTranslator()
+
+registerLocale()
+
+registerTenantDictionary()
+
+resolveDictionary()
+
+formatCurrency()
+
+The public API must remain stable for years.
+
+---
+
+# Architecture Decision Records
+
+For every major decision provide:
+
+Decision
+
+Alternatives considered
+
+Pros
+
+Cons
+
+Reason for approval
+
+Future implications
+
+---
+
+# Final Deliverables
+
+Produce a complete architecture specification.
+
+Include:
+
+1. Final folder structure
+
+2. Module responsibilities
+
+3. Dependency graph
+
+4. Public API
+
+5. Data flow
+
+6. Runtime flow
+
+7. Translation lifecycle
+
+8. Cache lifecycle
+
+9. Loader lifecycle
+
+10. Tenant override lifecycle
+
+11. Future extension points
+
+12. Known risks
+
+13. Trade-offs
+
+14. Non-functional requirements
+
+15. Final recommendations
+
+Do not write implementation code.
+
+Do not generate files.
+
+Do not migrate the application.
+
+This document exists only to freeze the architecture before implementation begins.
+
+Treat this as the definitive ADR (Architecture Decision Record) for the ARQON Internationalization Platform.
