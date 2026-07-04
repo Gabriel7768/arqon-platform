@@ -1,0 +1,399 @@
+ARQON — ADR-001 Formal Architecture Decision Review
+
+You are acting as a Principal Software Architect performing a pre-implementation architecture review.
+
+This is a formal Architecture Decision Review (ADR).
+
+Assume ADR-001 is the single authoritative specification for the Internationalization Platform.
+
+The architecture is currently in Architecture Freeze.
+
+Your responsibility is not to redesign the platform.
+
+Your responsibility is to validate whether the architecture is sufficiently complete, coherent and safe to begin implementation.
+
+Do not simplify the architecture.
+
+Do not remove features.
+
+Do not rewrite ADR-001.
+
+Do not generate implementation code.
+
+Focus exclusively on architecture.
+
+Review Objective
+
+Perform a rigorous engineering review exactly as a Principal Software Architect reviewing a platform before thousands of lines of production code are written.
+
+Assume implementation has not started yet.
+
+The goal is to identify every architectural issue that should be corrected before implementation begins.
+
+Challenge every decision.
+
+Do not assume a design is correct simply because it is documented.
+
+Architecture Review Scope
+
+Review the complete architecture, including:
+
+Folder organization
+Module responsibilities
+Dependency graph
+Public APIs
+Runtime contracts
+Data flow
+Runtime lifecycle
+Memory ownership
+Concurrency model
+Extension model
+Platform boundaries
+Multi-tenant support
+Caching
+Loading strategy
+Error handling
+Observability
+Future evolution
+Review Every Public API
+
+Review every public interface defined by ADR-001.
+
+Including:
+
+Registry API
+Loader API
+Cache API
+Translator API
+Formatter API
+Middleware API
+Validator API
+Scanner API
+CLI API
+React Adapter API
+Backend Adapter API
+Email Adapter API
+PDF Adapter API
+Notification Adapter API
+Testing API
+
+For every API verify:
+
+Single Responsibility
+Cohesion
+Coupling
+Dependency direction
+Encapsulation
+API consistency
+Naming consistency
+Lifecycle ownership
+Thread safety
+Async behavior
+Sync behavior
+Cancellation support
+Error propagation
+Extensibility
+Discoverability
+Testability
+Backward compatibility
+Semantic Versioning readiness
+
+Identify every unnecessary parameter.
+
+Identify every missing parameter.
+
+Identify mutable state exposure.
+
+Identify ownership ambiguities.
+
+Identify opportunities to improve API stability.
+
+Review Runtime Contracts
+
+Review every runtime flow.
+
+Including:
+
+Application startup
+Provider initialization
+Registry initialization
+First translation
+Namespace loading
+Concurrent namespace loading
+Locale switching
+Tenant switching
+Cache population
+Cache invalidation
+Version upgrades
+Storage recovery
+SSR request lifecycle
+Worker lifecycle
+Backend request lifecycle
+Email rendering
+PDF rendering
+Notification rendering
+CLI execution
+
+For every runtime flow verify:
+
+race conditions
+duplicated work
+inconsistent state
+stale state
+stale cache
+deadlocks
+starvation
+memory leaks
+unnecessary allocations
+unnecessary synchronization
+unnecessary network requests
+partial failures
+retry safety
+idempotency
+failure isolation
+recovery strategy
+Review Architectural Boundaries
+
+Validate that architectural boundaries are respected.
+
+Verify:
+
+zero circular dependencies
+zero React leakage
+zero browser leakage
+zero Node leakage
+zero framework leakage
+zero infrastructure leakage into core
+zero I/O inside business logic
+
+Confirm dependency direction follows Clean Architecture principles.
+
+Review SOLID
+
+Evaluate adherence to:
+
+Single Responsibility Principle
+Open/Closed Principle
+Liskov Substitution Principle
+Interface Segregation Principle
+Dependency Inversion Principle
+
+Highlight every violation.
+
+Review DDD Boundaries
+
+Evaluate whether responsibilities align with proper domain boundaries.
+
+Identify:
+
+Anemic abstractions
+God objects
+Hidden infrastructure concerns
+Mixed responsibilities
+Missing domain concepts
+Review Concurrency
+
+Specifically review:
+
+Registry
+
+Should reads remain synchronous?
+
+Should writes remain isolated?
+
+Should snapshots exist?
+
+Should read/write APIs be separated?
+
+Should immutable views exist?
+
+Should locking ever become necessary?
+
+Loader
+
+Should AbortSignal exist?
+
+Should retries belong here?
+
+Should timeout belong here?
+
+Should ETag support exist?
+
+Should conditional requests exist?
+
+Should exponential backoff exist?
+
+Cache
+
+Should TTL be mandatory?
+
+Should stale-while-revalidate exist?
+
+Should cache warming exist?
+
+Should statistics exist?
+
+Should cache invalidation become event-driven?
+
+Translator
+
+Should Translator be immutable?
+
+Should namespace binding remain fixed?
+
+Should Translator instances be reusable?
+
+Should nested translators exist?
+
+Formatters
+
+Should formatter factories exist?
+
+Should locale binding happen once?
+
+Should formatter instances be cached?
+
+React
+
+Verify Context update strategy.
+
+Verify rerender boundaries.
+
+Verify memoization opportunities.
+
+Verify Suspense compatibility.
+
+Verify React Server Components compatibility.
+
+Backend
+
+Verify singleton safety.
+
+Verify request isolation.
+
+Verify SSR safety.
+
+Verify multi-thread compatibility.
+
+CLI
+
+Verify command extensibility.
+
+Verify plugin architecture.
+
+Verify future command discovery.
+
+Review Observability
+
+Determine whether the architecture sufficiently supports:
+
+structured logging
+metrics
+tracing
+diagnostics
+health reporting
+debugging
+production support
+
+Identify missing observability contracts.
+
+Review Performance
+
+Evaluate:
+
+startup performance
+lookup complexity
+namespace loading
+cache efficiency
+memory consumption
+allocation patterns
+formatter reuse
+registry scalability
+bundle size
+lazy loading strategy
+
+Identify bottlenecks.
+
+Review Extensibility
+
+Determine whether the architecture can safely evolve to support:
+
+additional locales
+RTL languages
+mobile applications
+workers
+server-side rendering
+plugins
+AI-generated translations
+translation management systems
+micro-frontends
+multiple registries
+future adapters
+
+Identify extension risks.
+
+Risk Analysis
+
+For every issue found provide:
+
+Problem
+
+Why it matters
+
+Potential impact
+
+Proposed architectural improvement
+
+Priority
+
+One of:
+
+Required
+Recommended
+Optional
+
+Do not suggest implementation details.
+
+Only architectural improvements.
+
+Produce Scores
+
+Provide numeric scores (0–100) for:
+
+Overall Architecture
+API Stability
+Runtime Safety
+Scalability
+Extensibility
+Performance
+Maintainability
+Testability
+Production Readiness
+
+Explain the reasoning behind every score.
+
+Produce Risk Matrix
+
+Organize findings by severity.
+
+Critical
+High
+Medium
+Low
+Final Decision
+
+Conclude with exactly one of the following:
+
+APPROVED
+APPROVED WITH CHANGES
+REQUIRES ARCHITECTURAL REVISION
+
+If the architecture is not fully approved, explicitly list every architectural decision that blocks implementation from starting.
+
+If the architecture is approved with changes, clearly distinguish:
+
+Required Changes (must be completed before implementation)
+Recommended Improvements (should be completed before implementation if possible)
+Optional Improvements (future enhancements that do not block implementation)
+
+The final report should read like a formal architecture review produced by a Principal Software Architect before authorizing implementation of an enterprise-grade platform.
