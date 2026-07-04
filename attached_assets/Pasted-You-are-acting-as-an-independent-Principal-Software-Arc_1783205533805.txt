@@ -1,0 +1,180 @@
+You are acting as an independent Principal Software Architect performing a final Architecture Validation Review before implementation.
+
+This review is NOT a new architecture review.
+
+It is NOT an architecture redesign.
+
+It is NOT an opportunity to introduce new ideas.
+
+Assume the following documents already exist:
+
+- ADR-001 — Architecture Freeze (authoritative architecture)
+- ADR-002 — Runtime & API Contract Review
+- ADR-003 — Completeness, Coherence & Implementation Readiness Review
+
+Your responsibility is to critically validate the recommendations made in ADR-002 and ADR-003.
+
+Your goal is NOT to improve the architecture at any cost.
+
+Your goal is to determine whether each recommendation is actually justified for this platform.
+
+Do not assume every recommendation is correct.
+
+Challenge every recommendation using software engineering principles.
+
+Evaluate every proposed change against the following questions:
+
+• Does it solve a real architectural problem?
+• Is the problem likely to occur in this product?
+• Is the solution proportional to the problem?
+• Does it introduce unnecessary complexity?
+• Does it violate YAGNI?
+• Does it introduce premature optimization?
+• Does it increase maintenance cost?
+• Does it increase cognitive load?
+• Is there a simpler alternative?
+• Does the benefit justify the implementation cost?
+• Would large-scale SaaS platforms implement this from day one?
+• Can this decision safely be postponed until the platform evolves?
+
+For every recommendation from ADR-002 and ADR-003 classify it into exactly one category:
+
+1. Mandatory
+The architecture should not move into implementation without this change.
+
+2. Beneficial
+The change improves the architecture but implementation may begin without it.
+
+3. Premature Optimization
+The change is technically valid but should be postponed until future scaling or operational requirements justify it.
+
+4. Overengineering
+The change adds complexity without providing sufficient value for the current architecture and should not be incorporated into ADR-001.
+
+For every recommendation provide the following analysis:
+
+--------------------------------------------------
+
+Recommendation
+
+Current problem
+
+Real-world impact
+
+Architectural benefit
+
+Complexity introduced
+
+Alternative solutions
+
+Implementation cost
+
+Long-term maintenance cost
+
+Risk if postponed
+
+Classification
+
+Rationale
+
+--------------------------------------------------
+
+Pay special attention to validating the following topics:
+
+• Registry decomposition into multiple collaborators
+• ReadableRegistry vs WritableRegistry interfaces
+• CacheProvider abstraction
+• AbortSignal support
+• Loader retry policy
+• Timeout policy
+• Error taxonomy
+• SSR safety
+• React Server Components compatibility
+• Suspense compatibility
+• Tenant isolation
+• Immutable registry snapshots
+• Cache warming
+• Stale-While-Revalidate
+• Cache statistics
+• Observability contracts
+• Logging contracts
+• Metrics contracts
+• Tracing contracts
+• Health-check contracts
+• Plugin architecture for the CLI
+• Registry event system
+• Transaction support
+• ETag support
+• Conditional HTTP requests
+• Micro-frontend coordination
+• Functional Core / Imperative Shell documentation
+• StorageCache organization
+
+Evaluate every recommendation through the perspective of:
+
+• SOLID
+• Clean Architecture
+• DDD
+• KISS
+• YAGNI
+• Separation of Concerns
+• Interface Segregation
+• Dependency Inversion
+• Cohesion
+• Coupling
+• Runtime safety
+• Operational complexity
+• Maintainability
+• Evolutionary architecture
+
+Do NOT generate implementation code.
+
+Do NOT redesign ADR-001.
+
+Do NOT introduce new architectural ideas unless you discover a critical flaw that neither ADR-002 nor ADR-003 identified.
+
+If such a flaw exists, clearly justify why it is critical and explain why it was previously missed.
+
+At the end, produce the following sections:
+
+# Executive Summary
+
+# Recommendations Validation Matrix
+
+| Recommendation | Classification | Priority | Justification |
+
+# Mandatory Before Implementation
+
+# Safe To Postpone
+
+# Unnecessary Complexity
+
+# Potential Overengineering
+
+# Final Verdict
+
+Explicitly answer:
+
+1. Can ADR-001 move into implementation today?
+
+2. Which recommendations MUST be incorporated into ADR-001 before coding starts?
+
+3. Which recommendations should become future ADRs instead of modifying ADR-001?
+
+4. Which recommendations should be rejected entirely?
+
+5. Does ADR-003 introduce unnecessary architectural complexity?
+
+6. Does ADR-002 contain recommendations that are stronger than necessary?
+
+Finally, conclude with exactly one of the following:
+
+APPROVED
+
+APPROVED WITH MINIMAL CHANGES
+
+APPROVED WITH REQUIRED CHANGES
+
+REQUIRES ANOTHER ARCHITECTURE REVIEW
+
+The objective of this review is to produce the smallest, cleanest, most maintainable architecture that is still capable of supporting a large-scale, multi-tenant, enterprise SaaS platform without introducing premature optimization or unnecessary complexity before implementation.
