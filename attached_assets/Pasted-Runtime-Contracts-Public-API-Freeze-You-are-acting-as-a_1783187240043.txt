@@ -1,0 +1,390 @@
+Runtime Contracts & Public API Freeze
+
+You are acting as a Principal Software Architect performing a pre-implementation architecture review.
+
+This is a formal Architecture Decision Review (ADR).
+
+Assume ADR-001 is the authoritative architecture specification.
+
+Treat ADR-001 as frozen unless a critical architectural flaw is identified.
+
+Do NOT redesign the platform.
+
+Do NOT simplify the architecture.
+
+Do NOT remove features.
+
+Do NOT generate implementation code.
+
+Focus exclusively on architecture.
+
+Your responsibility is to identify:
+
+Architectural flaws
+Missing runtime contracts
+API inconsistencies
+Scalability risks
+Concurrency risks
+Lifecycle problems
+Dependency problems
+Memory ownership issues
+Future maintenance risks
+Extensibility limitations
+Testability issues
+Performance bottlenecks
+Security implications introduced by architectural decisions
+
+Every recommendation MUST include:
+
+Problem
+Why it matters
+Impact
+Proposed improvement
+Classification:
+Required
+Recommended
+Optional
+
+Do not provide generic compliments.
+
+Challenge every architectural decision.
+
+Assume this platform will support:
+
+Multi-tenant SaaS
+Enterprise customers
+Large organizations
+Long-term maintenance
+Continuous delivery
+Horizontal scaling
+High availability
+Future mobile clients
+Server-side rendering
+Background workers
+Plugin/extensions
+Future AI-assisted workflows
+Scope of Review
+
+Review every public interface and every interaction between modules.
+
+Validate the following APIs:
+
+Registry API
+Loader API
+Cache API
+Formatter API
+Translator API
+React Adapter API
+Backend Adapter API
+Email Adapter API
+PDF Adapter API
+Notification Adapter API
+CLI API
+
+For every API validate:
+
+Single Responsibility
+Separation of Concerns
+Cohesion
+Coupling
+Dependency Direction
+Interface Segregation
+SOLID compliance
+API consistency
+Naming consistency
+Mutability
+Immutability
+Thread safety
+Async behavior
+Error propagation
+Cancellation support
+Resource ownership
+Lifecycle
+Versioning compatibility
+Binary compatibility
+Future extensibility
+Testability
+Runtime Review
+
+Review every runtime lifecycle.
+
+Including but not limited to:
+
+Application startup
+Registry initialization
+First translation
+Namespace loading
+Lazy loading
+Concurrent namespace loading
+Locale switching
+Tenant switching
+Cache population
+Cache invalidation
+Memory eviction
+Dictionary updates
+Version upgrades
+Hot deployments
+SSR request lifecycle
+Worker lifecycle
+Backend request lifecycle
+Email rendering
+PDF rendering
+Notification rendering
+CLI execution
+
+For every runtime flow identify:
+
+Race conditions
+Duplicate work
+Deadlocks
+Lock contention
+Partial failures
+Stale cache
+Cache poisoning risks
+Memory leaks
+Resource leaks
+Inconsistent state
+Lost updates
+Retry storms
+Unnecessary allocations
+Unnecessary object creation
+Unnecessary network requests
+Startup bottlenecks
+Cold-start latency
+Failure recovery strategy
+Public API Review
+
+Review every public function.
+
+Confirm:
+
+Every parameter is necessary.
+Every return type is sufficient.
+Every exception is documented.
+Sync vs Async behavior is correct.
+Mutable vs Immutable contracts are explicit.
+APIs are future compatible.
+APIs are internally consistent.
+No unnecessary abstractions exist.
+No missing abstractions exist.
+Registry Review
+
+Critically evaluate the Registry.
+
+Answer whether:
+
+Every operation should remain synchronous.
+Dictionary loading should remain fully external.
+Registry mutation methods are sufficient.
+Read/write APIs should be separated.
+Snapshot support should exist.
+Transactions should exist.
+Event subscriptions should exist.
+Registry ownership is well defined.
+Registry lifecycle is explicit.
+Registry disposal should exist.
+Registry reset semantics are correct.
+Multiple registry instances remain safe.
+Loader Review
+
+Evaluate:
+
+AbortSignal support
+Request cancellation
+Retry strategy
+Timeout strategy
+Conditional requests
+ETag support
+Content hash validation
+Integrity verification
+Streaming support
+Parallel loading
+Prefetch strategy
+Background loading
+Failure recovery
+Cache Review
+
+Evaluate:
+
+TTL strategy
+Cache versioning
+Cache warming
+Cache statistics
+Stale-While-Revalidate
+Read-through cache
+Write-through cache
+Cache isolation
+Tenant isolation
+Namespace isolation
+Cache corruption recovery
+Storage limits
+Memory pressure behavior
+Translator Review
+
+Evaluate:
+
+Translator immutability
+Namespace binding
+Locale binding
+Nested translators
+Child translators
+Stateless behavior
+Factory design
+Runtime allocation cost
+API ergonomics
+Formatter Review
+
+Evaluate:
+
+Formatter factories
+Locale binding
+Formatter caching
+Intl object reuse
+Performance
+Deterministic output
+Timezone handling
+Future localization requirements
+React Adapter Review
+
+Validate:
+
+Context strategy
+Provider hierarchy
+Context update frequency
+Render boundaries
+Memoization
+Suspense compatibility
+Concurrent Rendering compatibility
+React Server Components compatibility
+Hydration safety
+SSR compatibility
+Backend Review
+
+Validate:
+
+Request isolation
+Singleton safety
+Registry isolation
+Thread safety
+Memory ownership
+Worker compatibility
+SSR safety
+Horizontal scaling readiness
+CLI Review
+
+Validate:
+
+Command architecture
+Plugin architecture
+Extensibility
+Automation support
+CI/CD compatibility
+Structured output
+Machine-readable output
+Future command expansion
+Dependency Review
+
+Validate the complete dependency graph.
+
+Confirm:
+
+Zero circular dependencies
+Zero React leakage outside adapters
+Zero browser leakage into Node modules
+Zero Node leakage into browser modules
+Zero framework leakage into core
+Clear dependency direction
+Stable layering
+No hidden runtime coupling
+Architecture Principles Review
+
+Validate compliance with:
+
+SOLID
+DRY
+KISS
+YAGNI
+Separation of Concerns
+Dependency Inversion
+Interface Segregation
+Explicit ownership
+Explicit lifecycle
+Functional Core / Imperative Shell
+Clean Architecture principles
+Package boundary integrity
+Future Evolution Review
+
+Evaluate whether the architecture can evolve without breaking existing consumers.
+
+Review readiness for:
+
+Mobile clients
+Desktop clients
+Server-side rendering
+Edge Runtime
+Workers
+Plugin ecosystem
+AI-assisted features
+Translation Management Systems
+Additional locale providers
+New cache providers
+New loader implementations
+Deliverables
+
+Produce the following sections.
+
+1. Executive Summary
+2. Architecture Score (0–100)
+3. API Stability Score
+4. Runtime Safety Score
+5. Scalability Score
+6. Performance Score
+7. Maintainability Score
+8. Testability Score
+9. Extensibility Score
+10. Security Readiness Score
+11. Dependency Health Score
+12. Risk Matrix
+
+Categorize findings as:
+
+Critical
+High
+Medium
+Low
+
+For each risk include:
+
+Description
+Impact
+Likelihood
+Recommendation
+13. Required Changes
+
+List only changes that MUST be completed before implementation begins.
+
+14. Recommended Improvements
+
+List improvements that increase long-term quality but are not blockers.
+
+15. Optional Improvements
+
+List enhancements that may be implemented later without affecting architectural integrity.
+
+16. Final Verdict
+
+At the end, explicitly state one of the following conclusions:
+
+APPROVED
+APPROVED WITH CHANGES
+REQUIRES ARCHITECTURAL REVISION
+
+If the architecture is not approved, clearly identify every architectural decision that prevents implementation from starting.
+
+Do not rewrite ADR-001.
+
+Do not generate implementation code.
+
+Do not propose unrelated redesigns.
+
+Only identify architectural improvements that should be applied before implementation begins.
