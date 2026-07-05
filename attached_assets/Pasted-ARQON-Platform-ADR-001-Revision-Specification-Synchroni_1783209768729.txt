@@ -1,0 +1,243 @@
+ARQON Platform — ADR-001 Revision
+Specification Synchronization Pass
+Status: Apply ADR-006 blockers and prepare ADR-001 for freeze
+
+Role:
+Act as a Specification Editor, not as an Architect.
+
+Mission:
+Update ADR-001 by incorporating ONLY the seven blocking issues identified by ADR-006.
+
+This is NOT an architecture review.
+
+Do NOT redesign anything.
+
+Do NOT introduce new ideas.
+
+Do NOT optimize.
+
+Do NOT add future features.
+
+Do NOT change architectural decisions already accepted.
+
+The architecture has already been finalized.
+
+Your responsibility is only to synchronize the specification so every section describes exactly the same system.
+
+==================================================
+AUTHORITATIVE SOURCES
+==================================================
+
+ADR-001 (current specification)
+
+ADR-004 (accepted decisions)
+
+ADR-005 (consolidation)
+
+ADR-006 (final audit)
+
+ADR-006 is authoritative only for identifying specification inconsistencies.
+
+Do NOT reinterpret ADR-004 or ADR-005.
+
+==================================================
+APPLY ONLY THESE CHANGES
+==================================================
+
+1.
+
+Resolve the Registry public API inconsistency.
+
+The specification currently requires request-scoped Registry instances but several public APIs still imply a single implicit global Registry.
+
+Choose ONE consistent approach and update every affected section.
+
+Every public API, runtime flow, sequence diagram and lifecycle description must reflect exactly the same model.
+
+No contradictory wording may remain.
+
+--------------------------------------------------
+
+2.
+
+Fully define ReadableRegistry and WritableRegistry.
+
+List every member.
+
+List every method.
+
+Define which operations belong to each interface.
+
+Ensure Registry implements both.
+
+Remove every ambiguity.
+
+--------------------------------------------------
+
+3.
+
+Resolve the inflight loading contradiction.
+
+The specification currently describes two different implementations.
+
+Choose the intended implementation already implied by ADR-005.
+
+Update every section so the same model is used everywhere.
+
+--------------------------------------------------
+
+4.
+
+Completely remove every obsolete CdnLoader reference.
+
+No diagram.
+
+No lifecycle.
+
+No example.
+
+No dependency graph.
+
+No sequence diagram.
+
+No folder tree.
+
+No documentation.
+
+Every occurrence must be replaced by the merged HttpLoader model.
+
+--------------------------------------------------
+
+5.
+
+Complete the I18nError specification.
+
+Create the missing behavior table.
+
+For every exported API specify exactly one of:
+
+• throws
+
+• rejects
+
+• fallback
+
+Map every failure to one I18nErrorCode.
+
+Disambiguate MISSING_KEY.
+
+No undefined behavior may remain.
+
+--------------------------------------------------
+
+6.
+
+Resolve the formatter API inconsistency.
+
+Synchronize:
+
+Public formatter API
+
+useFormatter()
+
+React adapter
+
+Examples
+
+Runtime flow
+
+Every documented formatter must appear consistently everywhere.
+
+--------------------------------------------------
+
+7.
+
+Resolve CLI output documentation.
+
+Standardize one output format convention.
+
+Remove every obsolete --json reference.
+
+Ensure every CLI command follows the same specification.
+
+==================================================
+GLOBAL CONSISTENCY
+==================================================
+
+While editing, verify that:
+
+every symbol has exactly one definition
+
+every interface has exactly one definition
+
+every lifecycle appears only once
+
+every runtime flow matches the public API
+
+every sequence diagram matches the runtime description
+
+every architecture diagram matches the folder structure
+
+every dependency graph matches the actual modules
+
+every exported symbol is documented
+
+no obsolete names remain
+
+no duplicated concepts remain
+
+==================================================
+STRICT RULES
+==================================================
+
+Do NOT create ADR-007.
+
+Do NOT introduce any architectural recommendation.
+
+Do NOT reopen previously accepted decisions.
+
+Do NOT revisit postponed items.
+
+Do NOT mention future improvements.
+
+Do NOT add TODO items.
+
+Do NOT leave unresolved questions.
+
+Do NOT use language like:
+
+"may"
+
+"could"
+
+"consider"
+
+"future"
+
+"optional"
+
+"recommended"
+
+The resulting ADR-001 must describe one single definitive architecture.
+
+==================================================
+DELIVERABLE
+==================================================
+
+Produce a fully synchronized revision of ADR-001.
+
+At the end include only:
+
+• Summary of modified sections
+
+• List of resolved inconsistencies
+
+• Confirmation that all seven ADR-006 blockers have been eliminated
+
+Do not include analysis.
+
+Do not include explanations.
+
+Do not include new recommendations.
+
+Only produce the revised specification ready to be frozen as Version 1.0.
