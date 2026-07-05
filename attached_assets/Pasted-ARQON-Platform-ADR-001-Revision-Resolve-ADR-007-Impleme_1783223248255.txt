@@ -1,0 +1,192 @@
+ARQON Platform — ADR-001 Revision
+Resolve ADR-007 Implementation Readiness Findings
+
+Role: Principal Software Architect
+
+Mission
+
+Revise ADR-001 Version 1.0 only to eliminate every blocking issue identified in ADR-007.
+
+This is not an architecture redesign.
+
+Do not introduce new features.
+
+Do not optimize or simplify existing decisions.
+
+The objective is exclusively to make the specification deterministic so that two independent implementation teams would build functionally identical systems.
+
+All previously accepted architectural decisions remain authoritative and MUST remain unchanged.
+
+Required Changes
+B1 — CacheProvider runtime integration
+
+The specification already defines CacheProvider and its implementations.
+
+It does not define when the cache is used.
+
+Update the Loader Lifecycle to specify the exact runtime sequence.
+
+The sequence must explicitly define:
+
+cache lookup
+cache hit behavior
+cache miss behavior
+loader invocation
+registry update
+cache write
+returned value
+cache invalidation behavior
+
+There must be exactly one execution path.
+
+No alternative implementations may remain possible.
+
+B2 — Shared base dictionaries vs request-scoped tenant data
+
+The current specification states that every server request creates a new Registry.
+
+This leaves undefined whether base dictionaries are reloaded every request.
+
+Without changing the request-scoped registry model, explicitly define:
+
+where immutable base dictionaries live
+whether they are shared
+how a new Registry receives access to them
+which data remains request-scoped
+which data is never shared
+
+The resulting behavior must preserve tenant isolation while avoiding unnecessary dictionary reloads.
+
+B3 — TranslateFn definition
+
+TranslateFn currently exists only by name.
+
+Define it completely.
+
+Specify:
+
+function signature
+parameter names
+parameter types
+optional parameters
+return type
+
+The definition must align exactly with the error behavior already documented in Section 7.
+
+No undocumented parameters may remain.
+
+B4 — formatCurrency
+
+The current API cannot determine which currency should be formatted.
+
+Revise only this formatter.
+
+Specify:
+
+currency parameter
+currency type
+updated signature
+behavior
+
+Do not modify the remaining formatter APIs.
+
+B5 — HybridLoader critical namespace source
+
+HybridLoader currently states:
+
+"checks whether namespace is marked critical"
+
+Define exactly how this information is provided.
+
+Specify:
+
+constructor parameter
+configuration object
+manifest
+or whichever mechanism already best fits the existing architecture
+
+There must be only one supported mechanism.
+
+Additional Completion Items
+
+Explicitly document constructor signatures for:
+
+Registry
+StaticLoader
+HttpLoader
+HybridLoader
+
+Only include dependencies that are already required elsewhere in ADR-001.
+
+Do not introduce dependency injection frameworks.
+
+Document the public props of:
+
+I18nProvider
+
+Include:
+
+required props
+optional props
+defaults
+
+Specify:
+
+MockRegistry behavior for every public method.
+
+Specify:
+
+the lookup convention used by formatEnum.
+
+Example:
+
+<namespace>.enum.<value>
+
+or whichever single convention the architecture adopts.
+
+There must be exactly one convention.
+
+Clarify:
+
+setInflight()
+
+If a RegistryEntry does not yet exist:
+
+is it created automatically?
+or is this considered invalid?
+
+Specify one deterministic behavior.
+
+Clarify logging semantics.
+
+Whenever Section 7 states:
+
+Logger.warn(code)
+
+Specify whether:
+
+an I18nError instance is created
+
+or
+
+only structured metadata is logged.
+
+One behavior only.
+
+Output Rules
+
+Update ADR-001 directly.
+
+Do not create ADR-008.
+
+Do not summarize.
+
+Do not explain changes.
+
+Do not include rationale.
+
+Do not include commentary.
+
+Produce a fully synchronized ADR-001 Version 1.1 in which every affected section is rewritten so that no obsolete wording remains anywhere in the document.
+
+The final document must be internally consistent and require no inference by implementers.
