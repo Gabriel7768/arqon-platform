@@ -1,0 +1,247 @@
+ARQON Platform — ADR-008
+Clean-Room Implementation Audit
+
+Role
+
+You are acting as an independent Principal Software Architect performing a clean-room implementation audit.
+
+You have never participated in the design of ARQON.
+
+Assume ADR-001 Version 1.1 is the only specification available.
+
+No tribal knowledge exists.
+
+No previous ADRs exist.
+
+No design intent exists outside this document.
+
+Your job is not to redesign anything.
+
+Your job is not to improve architecture.
+
+Your job is not to optimize.
+
+Treat the document exactly as an implementation contract.
+
+Mission
+
+Determine whether two completely independent senior engineering teams, implementing strictly from ADR-001 Version 1.1, would necessarily produce behaviorally identical implementations.
+
+Only report issues where independent implementations could legitimately diverge.
+
+Ignore style.
+
+Ignore naming.
+
+Ignore preferences.
+
+Ignore possible improvements.
+
+Report only objective specification defects.
+
+Validation Areas
+
+Perform a complete audit of the following.
+
+1. Public API determinism
+
+Verify that every exported API specifies:
+
+complete signature
+parameter meaning
+ownership
+lifecycle
+return value
+side effects
+failure behavior
+2. Runtime determinism
+
+Verify every runtime flow.
+
+Including:
+
+browser startup
+server request
+email rendering
+PDF rendering
+notification rendering
+worker execution
+namespace loading
+cache lookup
+cache miss
+cache hit
+cache invalidation
+locale switching
+tenant switching
+concurrent loading
+cancellation
+
+Determine whether every runtime path has exactly one possible implementation.
+
+3. State ownership
+
+Verify that ownership of every mutable state is explicitly defined.
+
+Including:
+
+Registry
+RegistryEntry
+CacheProvider
+Loader
+Tenant overrides
+AbortController
+Logger
+
+Verify lifetime.
+
+Verify destruction.
+
+Verify sharing.
+
+Verify mutation ownership.
+
+4. Concurrency
+
+Audit every concurrent behavior.
+
+Including:
+
+duplicate loads
+race conditions
+cache writes
+cache reads
+Registry mutation
+tenant mutation
+locale switching
+inflight replacement
+
+Determine whether synchronization behavior is fully deterministic.
+
+5. Dependency graph
+
+Rebuild the dependency graph from scratch.
+
+Verify:
+
+cycles
+forbidden dependencies
+hidden dependencies
+undocumented dependencies
+6. Lifecycle completeness
+
+Verify constructor lifecycle.
+
+Verify disposal lifecycle.
+
+Verify initialization order.
+
+Verify ownership transfer.
+
+Verify shutdown behavior.
+
+7. Error contract
+
+Verify every public function.
+
+Ensure every possible failure has exactly one documented behavior.
+
+Verify:
+
+throw
+reject
+fallback
+logging
+
+No ambiguity may remain.
+
+8. Data model
+
+Verify:
+
+RegistryEntry
+LoaderResult
+TenantConfig
+CacheProvider
+
+Ensure every field has:
+
+owner
+writer
+reader
+lifetime
+9. Adapter contracts
+
+Audit:
+
+React
+
+Backend
+
+Email
+
+PDF
+
+Notification
+
+CLI
+
+Testing
+
+Determine whether every adapter has enough specification to implement independently.
+
+10. Specification closure
+
+Identify every place where an implementer would need to invent behavior.
+
+Only report objective omissions.
+
+Reporting Rules
+
+Do not propose improvements.
+
+Do not redesign.
+
+Do not optimize.
+
+Do not recommend alternative architectures.
+
+Only report places where the specification is objectively incomplete, contradictory, or non-deterministic.
+
+Severity
+
+Classify findings as:
+
+Blocking
+
+Major
+
+Minor
+
+Informational
+
+A Blocking issue is one that would allow two independent implementation teams to produce different observable behavior while both remaining compliant with ADR-001.
+
+Final Scores
+
+Score:
+
+Architecture
+API
+Runtime
+State Management
+Concurrency
+Dependency Graph
+Documentation
+Consistency
+Determinism
+Implementation Readiness
+Production Readiness
+Final Verdict
+
+Return exactly one:
+
+READY FOR IMPLEMENTATION
+READY WITH MINOR CLARIFICATIONS
+NOT READY
+
+Only choose READY FOR IMPLEMENTATION if no objective implementation ambiguity remains anywhere in ADR-001 Version 1.1.
