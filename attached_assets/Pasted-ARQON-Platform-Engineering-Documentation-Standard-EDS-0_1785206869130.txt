@@ -1,0 +1,218 @@
+ARQON Platform — Engineering Documentation Standard (EDS-001)
+
+You are acting as the Chief Architect responsible for defining the engineering governance model for the entire ARQON Platform.
+
+Do NOT analyze ADR-001.
+
+Assume ADR-001 has already been frozen.
+
+Your task is to design the documentation system that every future package of ARQON must follow.
+
+The platform will eventually contain dozens of packages including:
+
+i18n
+auth
+billing
+RBAC
+workflow
+notifications
+storage
+search
+AI
+event bus
+audit
+integrations
+SDKs
+
+The objective is to prevent documentation entropy over the next 10 years.
+
+The documentation system must be suitable for a large engineering organization with multiple teams working independently.
+
+Requirements
+
+Design a documentation architecture that satisfies all of the following:
+
+Single Source of Truth
+Zero duplicated information
+Zero contradictory information
+Clear ownership
+Deterministic implementation
+Independent versioning
+Scalable to hundreds of packages
+Compatible with ADR methodology
+Compatible with Domain Driven Design
+Compatible with Clean Architecture
+Compatible with Hexagonal Architecture
+Define the complete documentation hierarchy.
+
+For every document specify:
+
+purpose
+audience
+owner
+lifecycle
+versioning strategy
+freeze policy
+update frequency
+dependencies
+allowed contents
+forbidden contents
+Design the complete engineering documentation taxonomy.
+
+For example (do not assume this structure is correct):
+
+Engineering Standards
+
+Architecture Decision Records
+
+Architecture Specifications
+
+Public API Specifications
+
+Runtime Specifications
+
+Lifecycle Specifications
+
+Security Specifications
+
+Performance Specifications
+
+Concurrency Specifications
+
+Data Model Specifications
+
+State Machine Specifications
+
+Adapter Specifications
+
+Protocol Specifications
+
+CLI Specifications
+
+SDK Specifications
+
+Testing Specifications
+
+Observability Specifications
+
+Deployment Specifications
+
+Operational Runbooks
+
+Migration Guides
+
+Developer Guides
+
+Implementation Notes
+
+RFCs
+
+Define ownership rules.
+
+For every engineering topic determine exactly one authoritative document.
+
+Examples:
+
+Module boundaries
+
+Dependency graph
+
+Package responsibilities
+
+Public interfaces
+
+Constructor signatures
+
+Type definitions
+
+Algorithms
+
+Execution flows
+
+Sequence diagrams
+
+State machines
+
+Error contracts
+
+Performance guarantees
+
+Concurrency guarantees
+
+Caching rules
+
+Lifecycle rules
+
+Memory ownership
+
+Thread safety
+
+Framework integration
+
+Testing contracts
+
+Mock behavior
+
+Configuration
+
+Environment variables
+
+Feature flags
+
+CLI commands
+
+Observability
+
+Metrics
+
+Logging
+
+Tracing
+
+Security
+
+Authentication
+
+Authorization
+
+Secrets
+
+Deployment
+
+Migration
+
+Examples
+
+Code snippets
+
+Each topic must belong to exactly one document.
+
+No topic may appear in two documents.
+
+Define cross-document rules.
+
+Specify:
+
+which documents may reference others
+which documents are forbidden from duplicating content
+how references should be written
+how changes propagate
+how breaking changes are introduced
+how document versioning works
+how package versioning relates to document versioning
+Define governance.
+
+Explain:
+
+when an ADR must be created
+when an ADR must be superseded
+when a Runtime Specification changes
+when an API Specification changes
+when an RFC is required
+what requires architecture review
+what requires only implementation review
+Finally
+
+Produce an Engineering Documentation Standard (EDS-001) suitable for a platform expected to evolve for at least ten years with multiple independent engineering teams.
+
+The result must be internally consistent, deterministic, and structured as an official engineering standard rather than a recommendation.
