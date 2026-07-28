@@ -1,0 +1,129 @@
+ARQON Platform — EES-001 Engineering Execution Standard
+
+Assume EDS-001 is complete and frozen.
+
+Do not redesign the documentation system.
+
+Instead, define how engineering work is executed across the ARQON Platform.
+
+The objective is to create the Engineering Execution Standard (EES-001), the operational counterpart to EDS-001.
+
+EDS-001 defines how engineering knowledge is documented.
+
+EES-001 must define how engineering work is performed.
+
+The resulting standard must be suitable for a software platform developed by multiple independent engineering teams over the next decade.
+
+Scope
+
+Define the complete software engineering lifecycle.
+
+Include every stage from idea to production.
+
+At minimum cover:
+
+Idea
+Discovery
+RFC creation
+Architecture review
+ADR creation
+Specification writing
+Implementation
+Code review
+Testing
+Validation
+Release
+Deployment
+Monitoring
+Maintenance
+Deprecation
+Removal
+Define engineering workflow.
+
+Describe:
+
+responsibilities
+required approvals
+required artifacts
+mandatory quality gates
+ownership transitions
+decision points
+review process
+release process
+Define package lifecycle.
+
+Describe the lifecycle of a package from creation until retirement.
+
+Include:
+
+proposal
+approval
+implementation
+stabilization
+production
+maintenance
+deprecation
+archival
+Define change management.
+
+Specify how:
+
+breaking API changes
+runtime changes
+security changes
+performance changes
+architectural changes
+
+are introduced.
+
+Define engineering roles.
+
+Examples:
+
+Principal Architect
+Staff Engineer
+Senior Engineer
+Package Owner
+Reviewer
+Release Manager
+
+For each role define:
+
+responsibilities
+authority
+decision scope
+Define quality gates.
+
+Specify mandatory gates before a package can be released.
+
+Include:
+
+architecture review
+API review
+runtime review
+security review
+performance review
+testing review
+documentation review
+Define release governance.
+
+Describe:
+
+semantic versioning policy
+release approval workflow
+rollback policy
+hotfix workflow
+emergency changes
+Define engineering principles.
+
+Produce a concise set of engineering principles that every contributor must follow.
+
+Final objective
+
+Produce EES-001 as an official engineering standard that complements EDS-001.
+
+EDS-001 governs engineering documentation.
+
+EES-001 governs engineering execution.
+
+The document must be internally consistent, deterministic, scalable, and suitable for long-term platform development.
