@@ -47,11 +47,11 @@ Thumbs.db
 # Replit
 .cache/
 .local/
-docs/
+docs/*
+!docs/governance/
 .agents/
 
 # Internal architecture
-docs/
 .agents/
 
 # Environment
