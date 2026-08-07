@@ -49,3 +49,31 @@ Thumbs.db
 .local/
 docs/
 .agents/
+
+# Internal architecture
+docs/
+.agents/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Secrets
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Local AI artifacts
+prompts/
+memory/
