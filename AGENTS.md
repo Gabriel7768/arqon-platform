@@ -176,6 +176,17 @@ control and the freeze is real. This risk is closed.
   accumulate commits. Ask explicitly, then push only on confirmation. This
   applies to this and all future sessions.
 
+### D-010 Secrets stay in Replit only (founder-confirmed)
+- ALL sensitive material — secrets, API keys, tokens, webhook secrets, `.env`
+  files, credentials of any kind — MUST remain ONLY in the Replit environment
+  (its secret manager / env vars). They MUST NEVER be committed to git, pushed
+  to GitHub, written into any source/spec/doc file, or placed anywhere outside
+  Replit. In code and specs, reference secrets ONLY by env var name
+  (e.g., `ABACATEPAY_API_KEY`), never by value. This applies to this and all
+  future sessions. Enforced by: .gitignore blocks .env/.env.*/\*.pem/\*.key/\*.p12/\*.pfx,
+  SEC-001 R2 (no secret value in source or VCS), and BILL-SEC INV-2 (never
+  log secrets).
+
 ## Abacatepay API — verified facts (for billing specs/impl)
 
 - Base URL: `https://api.abacatepay.com/v1` (same for sandbox/dev-mode and prod).
