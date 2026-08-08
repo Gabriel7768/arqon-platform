@@ -27,9 +27,9 @@ function detectInitialLocale(): SupportedLocale {
     return stored as SupportedLocale;
   }
 
-  const navLocale = window.navigator.language;
-  const match = SUPPORTED_LOCALES.find((loc) => navLocale.startsWith(loc));
-  if (match) return match;
+  const navLang = window.navigator.language.toLowerCase();
+  if (navLang.startsWith("pt")) return "pt-BR";
+  if (navLang.startsWith("en")) return "en-US";
 
   return DEFAULT_LOCALE;
 }
