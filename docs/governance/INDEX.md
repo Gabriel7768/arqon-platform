@@ -48,6 +48,13 @@
 | AUTH-SM-1.0.0 | Auth State Machine Spec | Frozen v1.0 | `specs/auth/AUTH-SM-1.0.0.md` |
 | AUTH-SEC-1.0.0 | Auth Security Spec | Frozen v1.0 | `specs/auth/AUTH-SEC-1.0.0.md` |
 | AUTH-TEST-1.0.0 | Auth Testing Spec | Frozen v1.0 | `specs/auth/AUTH-TEST-1.0.0.md` |
+| I18N-ARCH-1.0.0 | i18n Architecture Spec | Frozen v1.0 | `specs/i18n/I18N-ARCH-1.0.0.md` |
+| I18N-API-1.0.0 | i18n Public API Spec | Frozen v1.0 | `specs/i18n/I18N-API-1.0.0.md` |
+| I18N-RT-1.0.0 | i18n Runtime Spec | Frozen v1.0 | `specs/i18n/I18N-RT-1.0.0.md` |
+| I18N-SM-1.0.0 | i18n State Machine Spec | Frozen v1.0 | `specs/i18n/I18N-SM-1.0.0.md` |
+| I18N-SEC-1.0.0 | i18n Security Spec | Frozen v1.0 | `specs/i18n/I18N-SEC-1.0.0.md` |
+| I18N-ADAPT-REACT | i18n React Adapter Spec | Frozen v1.0 | `specs/i18n/I18N-ADAPT-REACT.md` |
+| I18N-TEST-1.0.0 | i18n Testing Spec | Frozen v1.0 | `specs/i18n/I18N-TEST-1.0.0.md` |
 
 ## Planning Documents
 

@@ -132,6 +132,7 @@ Every standard is versioned, status-tracked, and lives in version control.
 |---|---|---|
 | `@workspace/billing` | ARCH, API, RT, SM, SEC, ADAPT, TEST | Frozen v1.0.0 |
 | `@workspace/auth` | ARCH, API, RT, SM, SEC, TEST | Frozen v1.0.0 |
+| `@workspace/i18n` | ARCH, API, RT, SM, SEC, ADAPT-REACT, TEST | Frozen v1.0.0 |
 
 ### Planning documents
 

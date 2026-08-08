@@ -218,6 +218,26 @@ control and the freeze is real. This risk is closed.
   2. Does Abacatepay handle recurring subscriptions, or will we model
      monthly as a recurring charge / manual re-bill? Affects BILL-ARCH scope.
 
+### D-013 i18n first slice shipped (CTO)
+- packages/i18n implements a framework-agnostic internationalization core:
+  `createI18n(config)` → I18nInstance with `t()` (translation + `{param}`
+  interpolation + fallback chain), `formatNumber/formatCurrency/formatDate`
+  (via Intl, zero external deps), `setLocale`/`getLocale` (runtime locale
+  switching), `loadLocale` (async dictionary loading with in-flight dedup +
+  cache-for-life), `isLocaleLoaded`. Fail-safe by design: `t()` never throws
+  (returns key string on miss; INV-1/INV-2); `format*` never throws (falls
+  back to String(value)).
+- React adapter (`@workspace/i18n/adapters/react`): `I18nProvider` (context,
+  caller passes an I18nInstance), `useI18n()` (t + format* + locale +
+  setLocale, reactive), `useLocale()`. Throws CONTEXT_MISSING if used outside
+  provider.
+- 31 unit tests passing, tsc clean. No mocks of core (in-memory loader stub
+  only). 7 frozen specs govern it: I18N-ARCH, I18N-API, I18N-RT, I18N-SM,
+  I18N-SEC, I18N-ADAPT-REACT, I18N-TEST. First slice = en-US + pt-BR
+  (dictionaries are caller-provided via loader; none bundled). Email/PDF/
+  Notification adapters + OBS/DEPLOY deferred. Completes the
+  billing→auth→i18n delivery sequence (D-004).
+
 ## Abacatepay API — verified facts (for billing specs/impl)
 
 - Base URL: `https://api.abacatepay.com/v1` (same for sandbox/dev-mode and prod).
