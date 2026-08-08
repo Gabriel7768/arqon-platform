@@ -101,7 +101,7 @@ import { createCharge } from "../../packages/billing/src/client";
 | **API** | Express 5, OpenAPI-first contract (Orval codegen), esbuild |
 | **Database** | PostgreSQL (Supabase), Drizzle ORM |
 | **Validation** | Zod, drizzle-zod |
-| **Auth** | JWT (`arqon_token`), Bearer token injection |
+| **Auth** | JWT (`arqon_token`), Bearer token injection, `@workspace/auth` |
 | **Payments** | Abacatepay (PIX), `@workspace/billing` |
 | **Deployment** | Render (API) · Vercel (frontend) · Supabase (database) |
 
@@ -131,6 +131,7 @@ Every standard is versioned, status-tracked, and lives in version control.
 | Package | Specs | Status |
 |---|---|---|
 | `@workspace/billing` | ARCH, API, RT, SM, SEC, ADAPT, TEST | Frozen v1.0.0 |
+| `@workspace/auth` | ARCH, API, RT, SM, SEC, TEST | Frozen v1.0.0 |
 
 ### Planning documents
 
@@ -138,6 +139,7 @@ Every standard is versioned, status-tracked, and lives in version control.
 |---|---|---|
 | SPD-001 | `packages/i18n` | Active |
 | SPD-002 | `packages/billing` | Active |
+| SPD-003 | `packages/auth` | Active |
 
 Browse the full index at [`docs/governance/INDEX.md`](docs/governance/INDEX.md).
 
@@ -202,6 +204,9 @@ pnpm --filter @workspace/db run push
 ```bash
 # Billing package unit tests
 pnpm --filter @workspace/billing test
+
+# Auth package unit tests
+pnpm --filter @workspace/auth test
 ```
 
 ---
@@ -262,7 +267,8 @@ four detector types.
 │   ├── column-detection-engine/  # Revenue leak detectors
 │   └── db/                 #   Drizzle ORM schema
 ├── packages/               # New platform libraries
-│   └── billing/            #   Abacatepay PIX payment integration
+│   ├── billing/            #   Abacatepay PIX payment integration
+│   └── auth/               #   Password hashing + JWT sign/verify
 ├── docs/governance/        # Engineering governance corpus
 │   ├── standards/          #   Frozen technical standards
 │   ├── specs/              #   Package specifications

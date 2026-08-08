@@ -187,6 +187,15 @@ control and the freeze is real. This risk is closed.
   SEC-001 R2 (no secret value in source or VCS), and BILL-SEC INV-2 (never
   log secrets).
 
+### D-011 Auth slice shipped (CTO)
+- packages/auth implements hashPassword/comparePassword (bcrypt),
+  signToken/verifyToken (JWT), loadSecret (fail-closed — NO insecure fallback,
+  closing the api-server `?? "arqon-dev-secret"` gap), and AuthClient.
+  22 unit tests passing, tsc clean. 6 frozen specs govern it (no ADAPT — auth
+  has no external provider). Additive: api-server's inline lib/auth.ts is
+  grandfathered until a future migration task. Auth is now governed per
+  SEC-001. Next in the billing→auth→i18n sequence is i18n.
+
 ## Abacatepay API — verified facts (for billing specs/impl)
 
 - Base URL: `https://api.abacatepay.com/v1` (same for sandbox/dev-mode and prod).

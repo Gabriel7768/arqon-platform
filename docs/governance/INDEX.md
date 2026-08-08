@@ -31,12 +31,31 @@
 | ADAPT-001 | Adapter Specification Standard | Frozen v1.0 | `standards/ADAPT-001.md` |
 | SEC-001 | Security Specification Standard | Frozen v1.0 | `standards/SEC-001.md` |
 
+## Package Specifications
+
+| ID | Title | Status | File |
+|---|---|---|---|
+| BILL-ARCH-1.0.0 | Billing Architecture Spec | Frozen v1.0 | `specs/billing/BILL-ARCH-1.0.0.md` |
+| BILL-API-1.0.0 | Billing Public API Spec | Frozen v1.0 | `specs/billing/BILL-API-1.0.0.md` |
+| BILL-RT-1.0.0 | Billing Runtime Spec | Frozen v1.0 | `specs/billing/BILL-RT-1.0.0.md` |
+| BILL-SM-1.0.0 | Billing State Machine Spec | Frozen v1.0 | `specs/billing/BILL-SM-1.0.0.md` |
+| BILL-SEC-1.0.0 | Billing Security Spec | Frozen v1.0 | `specs/billing/BILL-SEC-1.0.0.md` |
+| BILL-ADAPT-ABACATEPAY | Billing Adapter Spec (Abacatepay) | Frozen v1.0 | `specs/billing/BILL-ADAPT-ABACATEPAY.md` |
+| BILL-TEST-1.0.0 | Billing Testing Spec | Frozen v1.0 | `specs/billing/BILL-TEST-1.0.0.md` |
+| AUTH-ARCH-1.0.0 | Auth Architecture Spec | Frozen v1.0 | `specs/auth/AUTH-ARCH-1.0.0.md` |
+| AUTH-API-1.0.0 | Auth Public API Spec | Frozen v1.0 | `specs/auth/AUTH-API-1.0.0.md` |
+| AUTH-RT-1.0.0 | Auth Runtime Spec | Frozen v1.0 | `specs/auth/AUTH-RT-1.0.0.md` |
+| AUTH-SM-1.0.0 | Auth State Machine Spec | Frozen v1.0 | `specs/auth/AUTH-SM-1.0.0.md` |
+| AUTH-SEC-1.0.0 | Auth Security Spec | Frozen v1.0 | `specs/auth/AUTH-SEC-1.0.0.md` |
+| AUTH-TEST-1.0.0 | Auth Testing Spec | Frozen v1.0 | `specs/auth/AUTH-TEST-1.0.0.md` |
+
 ## Planning Documents
 
 | ID | Title | Status | File |
 |---|---|---|---|
 | SPD-001 | Spec Planning Document — packages/i18n | Active v1.0 | `standards/SPD-001.md` |
 | SPD-002 | Spec Planning Document — packages/billing | Active v1.0 | `standards/SPD-002.md` |
+| SPD-003 | Spec Planning Document — packages/auth | Active v1.0 | `standards/SPD-003.md` |
 
 ## Dependency Order (materialization sequence)
 
