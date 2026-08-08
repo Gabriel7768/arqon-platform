@@ -196,6 +196,28 @@ control and the freeze is real. This risk is closed.
   grandfathered until a future migration task. Auth is now governed per
   SEC-001. Next in the billing→auth→i18n sequence is i18n.
 
+### D-012 Pricing tiers (founder-provided, pending clarification)
+- 4 tiers, all monthly recurring subscriptions (NOT one-time charges):
+  | Tier | Price | Histórico | Fontes | Usuários | Relatórios | Export | API | Integrações | Revisão estratégica |
+  |---|---|---|---|---|---|---|---|---|---|
+  | ARQON Starter | R$297/mês | 30 dias | 1 | 1 | — | — | — | — | — |
+  | ARQON Core | R$597/mês | 3 meses | 3 | 3 | ✓ | ✓ | — | — | — |
+  | Crescimento ARQON ⭐ | R$997/mês | 12 meses | 10 | 10 | ✓ | ✓ | ✓ | ✓ | 1/ano |
+  | ARQON Inteligência | R$1.997/mês | Ilimitado | Ilimitadas | Ilimitados | ✓ | ✓ | ✓ | ✓ | 2/ano |
+  Common to all 4: Análise de dados ✓, Faturas em atraso ✓, Clientes inativos
+  ✓, Oportunidades estagnadas ✓, Recomendações prioritárias ✓.
+  Starter EXCLUDES "Contratos próximos de vencimento"; the other 3 include it.
+- Engineering implication: the current @workspace/billing first slice handles
+  ONE-TIME PIX charges only. These tiers are MONTHLY SUBSCRIPTIONS — so a
+  future billing evolution is needed (subscription/recurring + plan limits
+  + feature flags gated by tier). Out of current first-slice scope (BILL-ARCH).
+- Pending clarification (asked of founder):
+  1. Garbled tier-label lines in the source ("ja: Básico", "sete:",
+     "membro: Avançado", "jar: Premium") — appear to be "Nível:" labels.
+     Need the clean values for each tier.
+  2. Does Abacatepay handle recurring subscriptions, or will we model
+     monthly as a recurring charge / manual re-bill? Affects BILL-ARCH scope.
+
 ## Abacatepay API — verified facts (for billing specs/impl)
 
 - Base URL: `https://api.abacatepay.com/v1` (same for sandbox/dev-mode and prod).

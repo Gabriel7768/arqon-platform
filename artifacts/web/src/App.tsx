@@ -1,11 +1,12 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Redirect, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { ProtectedRoute } from "@/components/protected-route";
 
 // Pages
+import LandingPage from "@/pages/landing";
 import LoginPage from "@/pages/login";
 import RegisterPage from "@/pages/register";
 import DashboardPage from "@/pages/dashboard";
@@ -20,18 +21,29 @@ import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
 
+function GuestLanding() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+  if (user) {
+    return <Redirect to="/dashboard" />;
+  }
+  return <LandingPage />;
+}
+
 function Router() {
   return (
     <Switch>
+      <Route path="/" component={GuestLanding} />
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
       
       {/* Protected Routes */}
-      <Route path="/">
-        <ProtectedRoute>
-          <DashboardPage />
-        </ProtectedRoute>
-      </Route>
       <Route path="/dashboard">
         <ProtectedRoute>
           <DashboardPage />
