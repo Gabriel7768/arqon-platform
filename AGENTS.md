@@ -21,10 +21,10 @@ serving the product, not the reverse.
 - **Working artifacts:** `artifacts/api-server` (Express + revenue-engine, 4
   detectors), `artifacts/web` (React frontend), `lib/` (api-spec, api-client-react,
   api-zod, column-detection-engine, db).
-- **In-flight initiative:** NONE — billing → auth → i18n delivery sequence
-  (D-004) is COMPLETE. All 3 packages shipped, tested, and synced to both
-  GitHub and the founder's Replit. Next initiative = founder's choice (see
-  "Resume Here — Next Session" below).
+- **In-flight initiative:** Integrating `@workspace/i18n` into the web app.
+  Wires `ArqonI18nProvider` (wraps App in main.tsx), creates en-US/pt-BR
+  dictionaries, refactors landing/login/register to use `useI18n().t()`,
+  adds a `LanguageToggle` in the landing header. Build passes.
 
 ## Resume Here — Next Session
 

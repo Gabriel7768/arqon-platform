@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocation, Link } from "wouter";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,16 +18,17 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Zap } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-});
-
 export default function LoginPage() {
+  const { t } = useI18n();
   const [, setLocation] = useLocation();
   const { login: authenticate } = useAuth();
   const { toast } = useToast();
-  
+
+  const loginSchema = z.object({
+    email: z.string().email(t("login.errorEmail")),
+    password: z.string().min(8, t("login.errorPassword")),
+  });
+
   const loginMutation = useLogin();
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -44,15 +46,15 @@ export default function LoginPage() {
         onSuccess: (data) => {
           authenticate(data.token, data.user);
           toast({
-            title: "Authentication successful",
-            description: "Welcome back to ARQON Engine.",
+            title: t("login.toastSuccess.title"),
+            description: t("login.toastSuccess.description"),
           });
         },
         onError: (error: any) => {
           toast({
             variant: "destructive",
-            title: "Authentication failed",
-            description: error?.data?.error || error?.message || "Invalid credentials",
+            title: t("login.toastError.title"),
+            description: error?.data?.error || error?.message || t("login.toastError.description"),
           });
         },
       }
@@ -64,21 +66,21 @@ export default function LoginPage() {
       {/* Decorative background elements */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-      
+
       <div className="w-full max-w-md space-y-8 z-10">
         <div className="text-center">
           <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(var(--primary),0.3)]">
             <Zap className="h-6 w-6 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight uppercase">ARQON Engine</h1>
+          <h1 className="text-3xl font-bold tracking-tight uppercase">{t("login.title")}</h1>
           <p className="text-muted-foreground mt-2 font-mono text-sm uppercase tracking-widest">
-            Precision Revenue Intelligence
+            {t("login.subtitle")}
           </p>
         </div>
 
         <div className="bg-card p-8 rounded-xl border border-border shadow-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-transparent" />
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -86,9 +88,9 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="uppercase text-xs tracking-wider text-muted-foreground">Work Email</FormLabel>
+                    <FormLabel className="uppercase text-xs tracking-wider text-muted-foreground">{t("login.emailLabel")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="name@company.com" {...field} className="font-mono bg-background" />
+                      <Input placeholder={t("login.emailPlaceholder")} {...field} className="font-mono bg-background" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -100,7 +102,7 @@ export default function LoginPage() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel className="uppercase text-xs tracking-wider text-muted-foreground">Password</FormLabel>
+                      <FormLabel className="uppercase text-xs tracking-wider text-muted-foreground">{t("login.passwordLabel")}</FormLabel>
                     </div>
                     <FormControl>
                       <Input type="password" {...field} className="font-mono bg-background" />
@@ -114,21 +116,21 @@ export default function LoginPage() {
                 className="w-full uppercase tracking-wider font-bold"
                 disabled={loginMutation.isPending}
               >
-                {loginMutation.isPending ? "Authenticating..." : "Initialize Session"}
+                {loginMutation.isPending ? t("login.submitPending") : t("login.submit")}
               </Button>
             </form>
           </Form>
 
           <div className="mt-6 text-center text-sm">
-            <span className="text-muted-foreground">System not initialized?</span>{" "}
+            <span className="text-muted-foreground">{t("login.footer")}</span>{" "}
             <Link href="/register" className="text-primary font-medium hover:underline">
-              Deploy Instance
+              {t("login.footerLink")}
             </Link>
           </div>
         </div>
-        
+
         <div className="text-center text-xs text-muted-foreground/50 font-mono">
-          SECURE CONNECTION ESTABLISHED • V1.0.0
+          {t("login.footerSecure")}
         </div>
       </div>
     </div>
