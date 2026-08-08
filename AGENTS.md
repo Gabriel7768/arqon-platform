@@ -170,6 +170,12 @@ control and the freeze is real. This risk is closed.
   HMAC), idempotency. 17 unit tests passing, tsc clean. 7 frozen specs govern
   it. Next in the billing→auth→i18n sequence is auth.
 
+### D-009 Push-gate rule (founder-confirmed)
+- After EVERY large implementation/work block, the agent MUST ask the founder
+  whether to `git push` before moving on. Do NOT auto-push and do NOT silently
+  accumulate commits. Ask explicitly, then push only on confirmation. This
+  applies to this and all future sessions.
+
 ## Abacatepay API — verified facts (for billing specs/impl)
 
 - Base URL: `https://api.abacatepay.com/v1` (same for sandbox/dev-mode and prod).
