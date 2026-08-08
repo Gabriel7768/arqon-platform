@@ -21,8 +21,54 @@ serving the product, not the reverse.
 - **Working artifacts:** `artifacts/api-server` (Express + revenue-engine, 4
   detectors), `artifacts/web` (React frontend), `lib/` (api-spec, api-client-react,
   api-zod, column-detection-engine, db).
-- **In-flight initiative:** `packages/i18n` — extract a reusable, white-label,
-  multi-tenant i18n platform package. Architectured via ADR-001 through ADR-008.
+- **In-flight initiative:** NONE — billing → auth → i18n delivery sequence
+  (D-004) is COMPLETE. All 3 packages shipped, tested, and synced to both
+  GitHub and the founder's Replit. Next initiative = founder's choice (see
+  "Resume Here — Next Session" below).
+
+## Resume Here — Next Session
+
+**Last session ended:** 2026-08-07. All work synced to GitHub (commit
+`2f678c5`) and confirmed synced to founder's Replit (`git status` clean,
+`HEAD == origin/main == 2f678c5`, pnpm 11.20.0, 53 tests pass, web build OK).
+
+**Delivery sequence billing → auth → i18n (D-004): COMPLETE.**
+- `@workspace/billing` — specs frozen, ONE_TIME PIX first slice
+- `@workspace/auth` — specs frozen, 22 tests, hashPassword/signToken/verifyToken/AuthClient
+- `@workspace/i18n` — specs frozen (7), 31 tests, core + React adapter, en-US + pt-BR
+- Landing page (premium dark B2B) shipped and built
+
+**Founder needs to choose the next initiative. CTO-recommended options,
+ranked by value × readiness:**
+
+1. **Integrate `@workspace/i18n` into the web app** — wire I18nProvider,
+   create en-US/pt-BR dictionaries, translate hardcoded strings in
+   landing.tsx/login/register. Makes i18n actually deliver product value
+   (not just a library). Low risk, high visibility.
+2. **Migrate api-server to use `@workspace/auth`** — replace inline
+   `lib/auth.ts` (grandfathered per D-011) with the governed package.
+   Closes the `?? "arqon-dev-secret"` gap permanently. Medium risk
+   (touches running API).
+3. **Evolve billing to monthly subscriptions (D-012)** — the 4 pricing
+   tiers are MONTHLY recurring, but current billing slice is ONE_TIME PIX
+   only. Needs BILL-ARCH extension. HIGH value but also the biggest scope.
+   BLOCKED on founder clarification: does Abacatepay handle recurring
+   subscriptions, or do we model manual re-bill? (D-012 pending items).
+4. **Continue governance corpus** — SM-001, ADAPT-001, SEC-001 standards
+   still missing. Lower product value short-term; defer until a package
+   actually needs them.
+
+**When founder returns, ask:** "Qual próximo: integrar i18n no app web,
+migrar api-server para @workspace/auth, ou evoluir billing para
+assinaturas mensais?"
+
+**Environment notes for Replit (founder's machine):**
+- pnpm 11.20.0 installed at `/home/runner/workspace/.config/npm/node_global/bin/pnpm`
+  — must `export PATH="/home/runner/workspace/.config/npm/node_global/bin:$PATH"`
+  each new shell session (or add to ~/.bashrc). NOT in default PATH.
+- Secrets stay ONLY in Replit (D-010). Never commit.
+- `pnpm install` reinstalls from scratch when switching pnpm major versions
+  (10→11 prompted "remove and reinstall" — answered Y, took ~2 min).
 
 ## Hosting Stack (founder-confirmed sourcing decision)
 
