@@ -7,5 +7,8 @@ export default defineConfig({
     testTimeout: 20000,
     hookTimeout: 20000,
     reporters: ["verbose"],
+    env: {
+      SESSION_SECRET: "arqon-test-secret-do-not-use-in-prod",
+    },
   },
 });

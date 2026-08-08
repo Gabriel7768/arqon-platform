@@ -21,10 +21,10 @@ serving the product, not the reverse.
 - **Working artifacts:** `artifacts/api-server` (Express + revenue-engine, 4
   detectors), `artifacts/web` (React frontend), `lib/` (api-spec, api-client-react,
   api-zod, column-detection-engine, db).
-- **In-flight initiative:** Integrating `@workspace/i18n` into the web app.
-  Wires `ArqonI18nProvider` (wraps App in main.tsx), creates en-US/pt-BR
-  dictionaries, refactors landing/login/register to use `useI18n().t()`,
-  adds a `LanguageToggle` in the landing header. Build passes.
+- **In-flight initiative:** Migrating api-server to `@workspace/auth`.
+  Replaced inline `lib/auth.ts` (which had `?? "arqon-dev-secret"` insecure
+  fallback) with `AuthClient` + `loadSecret()` from the governed package.
+  Fail-closed: throws if `SESSION_SECRET` unset. Typecheck + build pass.
 
 ## Resume Here — Next Session
 

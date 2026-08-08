@@ -175,6 +175,9 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@workspace/column-detection-engine':
         specifier: workspace:*
         version: link:../../lib/column-detection-engine

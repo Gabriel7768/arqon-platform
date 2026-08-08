@@ -1,21 +1,34 @@
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import {
+  AuthClient,
+  loadSecret,
+  type AuthPayload,
+} from "@workspace/auth";
 
-const JWT_SECRET = process.env.SESSION_SECRET ?? "arqon-dev-secret";
-const JWT_EXPIRES_IN = "7d";
+// Fail-closed: loadSecret() throws AuthError("SECRET_MISSING") when
+// SESSION_SECRET is unset or empty — no insecure "arqon-dev-secret" fallback.
+// The secret is resolved lazily so test harnesses can set SESSION_SECRET
+// before the first auth operation.
+let _client: AuthClient | null = null;
+
+function client(): AuthClient {
+  if (!_client) {
+    _client = new AuthClient({ secret: loadSecret() });
+  }
+  return _client;
+}
 
 export function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
+  return client().hashPassword(password);
 }
 
 export function comparePassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+  return client().comparePassword(password, hash);
 }
 
-export function signToken(payload: { userId: number; email: string }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+export function signToken(payload: AuthPayload): string {
+  return client().signToken(payload);
 }
 
-export function verifyToken(token: string): { userId: number; email: string } {
-  return jwt.verify(token, JWT_SECRET) as { userId: number; email: string };
+export function verifyToken(token: string): AuthPayload {
+  return client().verifyToken(token);
 }
