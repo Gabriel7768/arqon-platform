@@ -62,6 +62,25 @@ ranked by value × readiness:**
 migrar api-server para @workspace/auth, ou evoluir billing para
 assinaturas mensais?"
 
+**Founder's decision (2026-08-08):** Hold all three as backlog. Founder
+is not starting a new initiative this session. The backlog is frozen:
+
+- **Backlog 1 — Integrar `@workspace/i18n` no app web.** Wire I18nProvider,
+  create en-US/pt-BR dictionaries, translate hardcoded strings in
+  landing/login/register. Low risk, high visibility.
+- **Backlog 2 — Migrar api-server para `@workspace/auth`.** Replace
+  inline `lib/auth.ts` (grandfathered per D-011) with the governed
+  package. Closes the `?? "arqon-dev-secret"` gap permanently. Medium
+  risk (touches running API).
+- **Backlog 3 — Evoluir billing para assinaturas mensais (D-012).**
+  The 4 tiers are MONTHLY recurring, but current slice is ONE_TIME PIX
+  only. Needs BILL-ARCH extension. HIGH value, biggest scope. BLOCKED
+  on founder clarification: does Abacatepay handle recurring
+  subscriptions, or do we model manual re-bill?
+
+No new work to start. Next session, re-present these three and let
+founder pick.
+
 **Environment notes for Replit (founder's machine):**
 - pnpm 11.20.0 installed at `/home/runner/workspace/.config/npm/node_global/bin/pnpm`
   — must `export PATH="/home/runner/workspace/.config/npm/node_global/bin:$PATH"`
