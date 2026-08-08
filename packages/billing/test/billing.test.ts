@@ -7,9 +7,13 @@ import {
   getCharge,
   listCharges,
   handleWebhook,
+  createSubscription,
+  listSubscriptions,
+  cancelSubscription,
   BillingError,
   verifyWebhook,
   validateCreateChargeInput,
+  validateCreateSubscriptionInput,
 } from "../src/index.ts";
 
 const VALID_KEY = "test-key";
@@ -239,5 +243,212 @@ test("BillingClient throws AUTH_FAILED on missing apiKey", () => {
   assert.throws(
     () => new BillingClient({ apiKey: "", webhookSecret: "s" }),
     (err: BillingError) => err.code === "AUTH_FAILED",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// BILL-SUB-TEST — subscription (recurring) tests
+// ---------------------------------------------------------------------------
+
+function providerSubscription(status = "PENDING") {
+  return {
+    id: "subs_123",
+    url: "https://pay.example.test/subs-123",
+    status,
+    devMode: true,
+    methods: ["CARD"],
+    products: [{ id: "prod_1", externalId: "pro", quantity: 1 }],
+    frequency: "RECURRING",
+    nextBilling: null,
+    customer: null,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+  };
+}
+
+function validSubInput() {
+  return {
+    productId: "prod_abc123",
+    quantity: 1,
+    returnUrl: "https://example.com/back",
+    completionUrl: "https://example.com/done",
+  };
+}
+
+test("createSubscription returns mapped Subscription on success", async () => {
+  const c = client();
+  const f = mockFetch((_url, _init) =>
+    jsonRes({ data: providerSubscription("PENDING"), error: null, success: true }),
+  );
+  const sub = await createSubscription(c, validSubInput(), { fetch: f });
+  assert.equal(sub.id, "subs_123");
+  assert.equal(sub.status, "PENDING");
+  assert.equal(sub.frequency, "RECURRING");
+  assert.equal(sub.methods[0], "CARD");
+  assert.equal(sub.products[0].externalId, "pro");
+});
+
+test("createSubscription sends POST to /subscriptions/create with Bearer auth", async () => {
+  const c = client();
+  let capturedUrl = "";
+  let capturedInit: RequestInit | undefined;
+  const f = mockFetch((url, init) => {
+    capturedUrl = url as string;
+    capturedInit = init;
+    return jsonRes({ data: providerSubscription(), error: null, success: true });
+  });
+  await createSubscription(c, validSubInput(), { fetch: f });
+  assert.ok(capturedUrl.endsWith("/subscriptions/create"));
+  assert.equal(capturedInit?.method, "POST");
+  const headers = capturedInit?.headers as Record<string, string>;
+  assert.ok(headers["Authorization"].startsWith("Bearer "));
+  const body = JSON.parse(capturedInit?.body as string);
+  assert.equal(body.items[0].id, "prod_abc123");
+  assert.equal(body.items[0].quantity, 1);
+  assert.equal(body.methods[0], "CARD");
+});
+
+test("createSubscription defaults methods to [CARD] when omitted", async () => {
+  const c = client();
+  let capturedBody: string | undefined;
+  const f = mockFetch((_url, init) => {
+    capturedBody = init?.body as string;
+    return jsonRes({ data: providerSubscription(), error: null, success: true });
+  });
+  await createSubscription(c, validSubInput(), { fetch: f });
+  const body = JSON.parse(capturedBody as string);
+  assert.deepEqual(body.methods, ["CARD"]);
+});
+
+test("createSubscription forwards customerId and externalId when provided", async () => {
+  const c = client();
+  let capturedBody: string | undefined;
+  const f = mockFetch((_url, init) => {
+    capturedBody = init?.body as string;
+    return jsonRes({ data: providerSubscription(), error: null, success: true });
+  });
+  await createSubscription(c, {
+    ...validSubInput(),
+    customerId: "cust_123",
+    externalId: "subs-ref-001",
+  }, { fetch: f });
+  const body = JSON.parse(capturedBody as string);
+  assert.equal(body.customerId, "cust_123");
+  assert.equal(body.externalId, "subs-ref-001");
+});
+
+test("createSubscription throws AUTH_FAILED on token error", async () => {
+  const c = client();
+  const f = mockFetch(() =>
+    jsonRes({ data: null, error: "Token de autenticação inválido", success: false }, 401),
+  );
+  await assert.rejects(
+    () => createSubscription(c, validSubInput(), { fetch: f }),
+    (err: BillingError) => err.code === "AUTH_FAILED",
+  );
+});
+
+test("createSubscription retries on PROVIDER_ERROR then succeeds", async () => {
+  const c = client();
+  let calls = 0;
+  const f = mockFetch(() => {
+    calls++;
+    if (calls < 2) {
+      return jsonRes({ data: null, error: "internal error", success: false }, 500);
+    }
+    return jsonRes({ data: providerSubscription("PAID"), error: null, success: true });
+  });
+  const sub = await createSubscription(c, validSubInput(), { fetch: f });
+  assert.equal(calls, 2);
+  assert.equal(sub.status, "PAID");
+});
+
+test("listSubscriptions returns mapped array on success", async () => {
+  const c = client();
+  const f = mockFetch((_url, _init) =>
+    jsonRes({
+      data: [providerSubscription("PENDING"), providerSubscription("PAID")],
+      error: null,
+      success: true,
+    }),
+  );
+  const subs = await listSubscriptions(c, { fetch: f });
+  assert.equal(subs.length, 2);
+  assert.equal(subs[0].status, "PENDING");
+  assert.equal(subs[1].status, "PAID");
+});
+
+test("listSubscriptions sends GET to /subscriptions/list", async () => {
+  const c = client();
+  let capturedUrl = "";
+  let capturedMethod = "";
+  const f = mockFetch((url, init) => {
+    capturedUrl = url as string;
+    capturedMethod = init?.method as string;
+    return jsonRes({ data: [], error: null, success: true });
+  });
+  await listSubscriptions(c, { fetch: f });
+  assert.ok(capturedUrl.endsWith("/subscriptions/list"));
+  assert.equal(capturedMethod, "GET");
+});
+
+test("cancelSubscription sends POST to /subscriptions/cancel with id", async () => {
+  const c = client();
+  let capturedUrl = "";
+  let capturedBody: string | undefined;
+  const f = mockFetch((url, init) => {
+    capturedUrl = url as string;
+    capturedBody = init?.body as string;
+    return jsonRes({ data: providerSubscription("CANCELLED"), error: null, success: true });
+  });
+  const sub = await cancelSubscription(c, "subs_123", { fetch: f });
+  assert.ok(capturedUrl.endsWith("/subscriptions/cancel"));
+  const body = JSON.parse(capturedBody as string);
+  assert.equal(body.id, "subs_123");
+  assert.equal(sub.status, "CANCELLED");
+});
+
+test("cancelSubscription throws VALIDATION on empty id", async () => {
+  const c = client();
+  const f = mockFetch(() => jsonRes({ data: null, error: null, success: true }));
+  await assert.rejects(
+    () => cancelSubscription(c, "", { fetch: f }),
+    (err: BillingError) => err.code === "VALIDATION",
+  );
+});
+
+// --- subscription validation ---
+
+test("validateCreateSubscriptionInput rejects missing productId", () => {
+  assert.throws(
+    () => validateCreateSubscriptionInput({ ...validSubInput(), productId: "" }),
+    (err: BillingError) => err.code === "VALIDATION",
+  );
+});
+
+test("validateCreateSubscriptionInput rejects quantity < 1", () => {
+  assert.throws(
+    () => validateCreateSubscriptionInput({ ...validSubInput(), quantity: 0 }),
+    (err: BillingError) => err.code === "VALIDATION",
+  );
+});
+
+test("validateCreateSubscriptionInput rejects invalid returnUrl", () => {
+  assert.throws(
+    () => validateCreateSubscriptionInput({ ...validSubInput(), returnUrl: "not-a-url" }),
+    (err: BillingError) => err.code === "VALIDATION",
+  );
+});
+
+test("validateCreateSubscriptionInput rejects unsupported method", () => {
+  assert.throws(
+    () => validateCreateSubscriptionInput({ ...validSubInput(), methods: ["BOLETO" as never] }),
+    (err: BillingError) => err.code === "VALIDATION",
+  );
+});
+
+test("validateCreateSubscriptionInput accepts valid input with CARD method", () => {
+  assert.doesNotThrow(() =>
+    validateCreateSubscriptionInput({ ...validSubInput(), methods: ["CARD"] }),
   );
 });

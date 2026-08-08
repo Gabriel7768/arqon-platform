@@ -1,10 +1,14 @@
-// BILL-API-1.0.0 + BILL-RT-1.0.0 — core client and functions
+// BILL-API-1.0.0 + BILL-RT-1.0.0 + BILL-SUB-1.0.0 — core client and functions
 import { BillingError } from "./errors";
 import {
   getBillingList,
   mapBillingToCharge,
   postBillingCreate,
   DEFAULT_BASE_URL,
+  mapSubscriptionToSubscription,
+  postSubscriptionCreate,
+  getSubscriptionList,
+  postSubscriptionCancel,
 } from "./adapter";
 import {
   BillingCreateBody,
@@ -12,10 +16,15 @@ import {
   ChargeId,
   ChargeStatus,
   CreateChargeInput,
+  CreateSubscriptionInput,
   Envelope,
   ProviderBilling,
+  ProviderSubscription,
+  Subscription,
+  SubscriptionCreateBody,
+  SubscriptionId,
 } from "./types";
-import { validateCreateChargeInput } from "./validate";
+import { validateCreateChargeInput, validateCreateSubscriptionInput } from "./validate";
 import { verifyWebhook } from "./webhook";
 
 export interface BillingClientConfig {
@@ -206,3 +215,99 @@ function normalizeEvent(payload: unknown): NormalizedEvent {
 export { verifyWebhook };
 export { isRetryableStatus };
 export { BillingError };
+
+// ---------------------------------------------------------------------------
+// BILL-SUB-1.0.0 — subscription (recurring billing) functions
+// ---------------------------------------------------------------------------
+
+// BILL-SUB §8 — createSubscription (creates a subscription checkout)
+export async function createSubscription(
+  client: BillingClient,
+  input: CreateSubscriptionInput,
+  init?: { fetch?: typeof fetch },
+): Promise<Subscription> {
+  validateCreateSubscriptionInput(input);
+
+  const body: SubscriptionCreateBody = {
+    items: [{ id: input.productId, quantity: input.quantity }],
+    methods: input.methods ?? ["CARD"],
+    returnUrl: input.returnUrl,
+    completionUrl: input.completionUrl,
+    ...(input.customerId !== undefined ? { customerId: input.customerId } : {}),
+    ...(input.externalId !== undefined ? { externalId: input.externalId } : {}),
+    ...(input.customer !== undefined ? { customer: input.customer } : {}),
+  };
+
+  let lastEnvelope: Envelope<ProviderSubscription> | null = null;
+  for (let attempt = 1; attempt <= MAX_CREATE_ATTEMPTS; attempt++) {
+    const res = await postSubscriptionCreate(
+      { apiKey: client.apiKey, baseUrl: client.baseUrl },
+      body,
+      init,
+    );
+    lastEnvelope = res;
+    if (res.data) return mapSubscriptionToSubscription(res.data);
+    if (res.error && /token|auth/i.test(res.error)) {
+      throw new BillingError("AUTH_FAILED", res.error, 401);
+    }
+    if (attempt < MAX_CREATE_ATTEMPTS) await sleep(backoffMs(attempt));
+  }
+  throw new BillingError(
+    "PROVIDER_ERROR",
+    lastEnvelope?.error ?? "Abacatepay subscription create failed",
+  );
+}
+
+// BILL-SUB §9 — listSubscriptions
+export async function listSubscriptions(
+  client: BillingClient,
+  init?: { fetch?: typeof fetch },
+): Promise<Subscription[]> {
+  let last: Envelope<ProviderSubscription[]> | null = null;
+  for (let attempt = 1; attempt <= MAX_READ_ATTEMPTS; attempt++) {
+    const res = await getSubscriptionList(
+      { apiKey: client.apiKey, baseUrl: client.baseUrl },
+      init,
+    );
+    last = res;
+    if (res.data) return res.data.map(mapSubscriptionToSubscription);
+    if (res.error && /token|auth/i.test(res.error)) {
+      throw new BillingError("AUTH_FAILED", res.error, 401);
+    }
+    if (attempt < MAX_READ_ATTEMPTS) await sleep(backoffMs(attempt));
+  }
+  throw new BillingError(
+    "PROVIDER_ERROR",
+    last?.error ?? "Abacatepay subscription list failed",
+  );
+}
+
+// BILL-SUB §10 — cancelSubscription
+export async function cancelSubscription(
+  client: BillingClient,
+  id: SubscriptionId,
+  init?: { fetch?: typeof fetch },
+): Promise<Subscription> {
+  if (!id) {
+    throw new BillingError("VALIDATION", "subscription id is required to cancel");
+  }
+
+  let lastEnvelope: Envelope<ProviderSubscription> | null = null;
+  for (let attempt = 1; attempt <= MAX_CREATE_ATTEMPTS; attempt++) {
+    const res = await postSubscriptionCancel(
+      { apiKey: client.apiKey, baseUrl: client.baseUrl },
+      id,
+      init,
+    );
+    lastEnvelope = res;
+    if (res.data) return mapSubscriptionToSubscription(res.data);
+    if (res.error && /token|auth/i.test(res.error)) {
+      throw new BillingError("AUTH_FAILED", res.error, 401);
+    }
+    if (attempt < MAX_CREATE_ATTEMPTS) await sleep(backoffMs(attempt));
+  }
+  throw new BillingError(
+    "PROVIDER_ERROR",
+    lastEnvelope?.error ?? `Abacatepay subscription ${id} cancel failed`,
+  );
+}

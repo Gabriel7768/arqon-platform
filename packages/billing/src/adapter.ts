@@ -4,6 +4,10 @@ import type {
   Charge,
   Envelope,
   ProviderBilling,
+  ProviderSubscription,
+  Subscription,
+  SubscriptionCreateBody,
+  SubscriptionId,
 } from "./types";
 
 export const DEFAULT_BASE_URL = "https://api.abacatepay.com/v1";
@@ -71,4 +75,89 @@ export async function getBillingList(
     },
   });
   return (await res.json()) as Envelope<ProviderBilling[]>;
+}
+
+// ---------------------------------------------------------------------------
+// BILL-ADAPT-ABACATEPAY-SUB — subscription HTTP mapping
+// ---------------------------------------------------------------------------
+
+// BILL-ADAPT-ABACATEPAY-SUB §6 — map provider Subscription -> core Subscription
+export function mapSubscriptionToSubscription(b: ProviderSubscription): Subscription {
+  return {
+    id: b.id,
+    url: b.url,
+    status: b.status,
+    devMode: b.devMode,
+    methods: b.methods,
+    products: b.products.map((p) => ({
+      externalId: p.externalId,
+      quantity: p.quantity,
+    })),
+    frequency: "RECURRING",
+    nextBilling: b.nextBilling,
+    customer: b.customer,
+    createdAt: b.createdAt,
+    updatedAt: b.updatedAt,
+  };
+}
+
+// BILL-ADAPT-ABACATEPAY-SUB §7 — POST /subscriptions/create
+export async function postSubscriptionCreate(
+  cfg: AdapterConfig,
+  body: SubscriptionCreateBody,
+  init?: { fetch?: typeof fetch },
+): Promise<Envelope<ProviderSubscription>> {
+  const doFetch = init?.fetch ?? fetch;
+  const res = await doFetch(
+    `${cfg.baseUrl ?? DEFAULT_BASE_URL}/subscriptions/create`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cfg.apiKey}`,
+      },
+      body: JSON.stringify(body),
+    },
+  );
+  return (await res.json()) as Envelope<ProviderSubscription>;
+}
+
+// BILL-ADAPT-ABACATEPAY-SUB §8 — GET /subscriptions/list
+export async function getSubscriptionList(
+  cfg: AdapterConfig,
+  init?: { fetch?: typeof fetch },
+): Promise<Envelope<ProviderSubscription[]>> {
+  const doFetch = init?.fetch ?? fetch;
+  const res = await doFetch(
+    `${cfg.baseUrl ?? DEFAULT_BASE_URL}/subscriptions/list`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cfg.apiKey}`,
+      },
+    },
+  );
+  return (await res.json()) as Envelope<ProviderSubscription[]>;
+}
+
+// BILL-ADAPT-ABACATEPAY-SUB §9 — POST /subscriptions/cancel
+export async function postSubscriptionCancel(
+  cfg: AdapterConfig,
+  id: SubscriptionId,
+  init?: { fetch?: typeof fetch },
+): Promise<Envelope<ProviderSubscription>> {
+  const doFetch = init?.fetch ?? fetch;
+  const res = await doFetch(
+    `${cfg.baseUrl ?? DEFAULT_BASE_URL}/subscriptions/cancel`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cfg.apiKey}`,
+      },
+      body: JSON.stringify({ id }),
+    },
+  );
+  return (await res.json()) as Envelope<ProviderSubscription>;
 }
