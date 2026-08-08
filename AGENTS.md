@@ -159,3 +159,31 @@ control and the freeze is real. This risk is closed.
 ### D-006 Immediate execution priority (founder-confirmed)
 - Option A: materialize governance corpus into docs/governance/ in git BEFORE
   authoring new standards (SM-001 etc.) or any package work.
+
+### D-007 Execution sequence (founder-confirmed)
+- SEC-001 → SPD-002 (billing) → billing package specs → first executable slice
+  of packages/billing. [in progress]
+
+## Abacatepay API — verified facts (for billing specs/impl)
+
+- Base URL: `https://api.abacatepay.com/v1` (same for sandbox/dev-mode and prod).
+- Auth: `Authorization: Bearer <api_key>`. Dev-mode key = sandbox; prod key = real.
+  Missing/invalid key → HTTP 401.
+- Create charge: `POST /billing/create`. Body (required): `frequency` (only
+  `ONE_TIME` today), `methods` (only `PIX` today, min/max 1), `products[]`
+  (externalId, name, description?, quantity>=1, price>=100 cents), `returnUrl`,
+  `completionUrl`. Optional: `customerId` (existing) or `customer` (new: name,
+  cellphone, email, taxId).
+- Response envelope: `{data, error, success}`. On success, `data` = Billing.
+- Billing schema: `id`, `url` (payment URL), `amount` (cents), `status`
+  (`PENDING|EXPIRED|CANCELLED|PAID|REFUNDED`), `devMode` (bool), `methods[]`,
+  `products[]` (id, externalId, quantity), `frequency`, `nextBilling` (nullable),
+  `customer` (nullable), `createdAt`, `updatedAt`.
+- List charges: `GET /billing/list`.
+- Webhook: registered in dashboard (URL + secret). Secret sent as query string
+  `?webhookSecret=...`. FAQ also mentions `X-Webhook-Signature` HMAC-SHA256
+  header for validation — implement BOTH checks (query secret OR signature) and
+  document which the package relies on. Events relate to billing status changes
+  (paid/expired/cancelled). Idempotency via event `id`.
+- SDK: `@abacatepay/sdk` for Node/TS exists but API-direct is fine (JSON in/out).
+- Price is in centavos (BRL), minimum 100 (R$1,00).

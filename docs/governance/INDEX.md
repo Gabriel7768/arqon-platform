@@ -29,14 +29,14 @@
 | RT-001 | Runtime Specification Standard | Frozen v1.0 | `standards/RT-001.md` |
 | SM-001 | State Machine Specification Standard | Frozen v1.0 | `standards/SM-001.md` |
 | ADAPT-001 | Adapter Specification Standard | Frozen v1.0 | `standards/ADAPT-001.md` |
-| SEC-001 | Security Specification Standard | Pending (gap) | — |
+| SEC-001 | Security Specification Standard | Frozen v1.0 | `standards/SEC-001.md` |
 
 ## Planning Documents
 
 | ID | Title | Status | File |
 |---|---|---|---|
 | SPD-001 | Spec Planning Document — packages/i18n | Active v1.0 | `standards/SPD-001.md` |
-| SPD-002 | Spec Planning Document — packages/billing | Pending | — |
+| SPD-002 | Spec Planning Document — packages/billing | Active v1.0 | `standards/SPD-002.md` |
 
 ## Dependency Order (materialization sequence)
 
