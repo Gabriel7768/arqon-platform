@@ -162,7 +162,13 @@ control and the freeze is real. This risk is closed.
 
 ### D-007 Execution sequence (founder-confirmed)
 - SEC-001 → SPD-002 (billing) → billing package specs → first executable slice
-  of packages/billing. [in progress]
+  of packages/billing. [DONE — commit a021e5a]
+
+### D-008 Billing first slice shipped (CTO)
+- packages/billing implements createCharge/getCharge/listCharges/handleWebhook
+  against Abacatepay, with retry, validation, webhook verification (secret +
+  HMAC), idempotency. 17 unit tests passing, tsc clean. 7 frozen specs govern
+  it. Next in the billing→auth→i18n sequence is auth.
 
 ## Abacatepay API — verified facts (for billing specs/impl)
 
