@@ -21,11 +21,12 @@ serving the product, not the reverse.
 - **Working artifacts:** `artifacts/api-server` (Express + revenue-engine, 4
   detectors), `artifacts/web` (React frontend), `lib/` (api-spec, api-client-react,
   api-zod, column-detection-engine, db).
-- **In-flight initiative:** Evolved billing to monthly subscriptions
-  (BILL-SUB-1.0.0). Extended @workspace/billing with createSubscription,
-  listSubscriptions, cancelSubscription against Abacatepay's
-  /subscriptions/* endpoints. Maintains ONE_TIME for backward compat.
-  32 tests pass, typecheck clean.
+- **In-flight initiative:** Integrated billing subscriptions into the
+  api-server. New routes: POST /api/billing/subscribe (creates hosted
+  checkout), GET /api/billing/subscriptions (list), POST /api/billing/cancel,
+  POST /api/billing/webhook (verified). lib/billing.ts provides a fail-closed
+  BillingClient singleton + planId→productId mapping via env vars. Abacatepay
+  is the source of truth (no local DB persistence in this slice).
 
 ## Resume Here — Next Session
 

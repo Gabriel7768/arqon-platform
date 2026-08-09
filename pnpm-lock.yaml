@@ -178,6 +178,9 @@ importers:
       '@workspace/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@workspace/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@workspace/column-detection-engine':
         specifier: workspace:*
         version: link:../../lib/column-detection-engine
