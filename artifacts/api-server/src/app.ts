@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -41,5 +41,20 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// Final error handler — must be registered AFTER the router. Express
+// identifies error-handling middleware by its 4-argument signature.
+// Prevents leaking stack traces / internal details in responses
+// (the default Express handler exposes them when NODE_ENV !== "production").
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  // Malformed JSON body from express.json() — return a clean 400.
+  if (err instanceof SyntaxError && "status" in err && err.status === 400 && "body" in err) {
+    res.status(400).json({ error: "Malformed JSON in request body" });
+    return;
+  }
+
+  logger.error({ err }, "Unhandled request error");
+  res.status(500).json({ error: "Internal server error" });
+});
 
 export default app;
