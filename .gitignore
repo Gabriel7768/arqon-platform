@@ -49,6 +49,7 @@ Thumbs.db
 .local/
 docs/*
 !docs/governance/
+!docs/audit/
 .agents/
 
 # Internal architecture
