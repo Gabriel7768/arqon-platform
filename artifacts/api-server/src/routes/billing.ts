@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
+import { eq, and } from "drizzle-orm";
 import {
   createSubscription,
-  listSubscriptions,
   cancelSubscription,
   handleWebhook,
 } from "@workspace/billing";
@@ -14,15 +14,18 @@ import {
   BillingError,
 } from "../lib/billing";
 import { authenticate, type AuthRequest } from "../middlewares/authenticate";
+import { requireOrg, type OrgRequest } from "../middlewares/require-org";
+import { db, subscriptionsTable } from "@workspace/db";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
 // POST /api/billing/subscribe
-// Authenticated. Body: { planId: "starter" | "core" | "growth" | "intelligence" }
+// Authenticated + org-scoped. Body: { planId: "starter" | "core" | "growth" | "intelligence" }
 // Creates a hosted subscription checkout and returns the URL the client
-// should redirect to.
-router.post("/billing/subscribe", authenticate, async (req: AuthRequest, res): Promise<void> => {
+// should redirect to. Persists a local record linking the provider
+// subscription to the caller's organization.
+router.post("/billing/subscribe", authenticate, requireOrg, async (req: OrgRequest, res): Promise<void> => {
   const planId = typeof req.body?.planId === "string" ? req.body.planId : "";
 
   if (!SUPPORTED_PLANS.includes(planId)) {
@@ -52,6 +55,14 @@ router.post("/billing/subscribe", authenticate, async (req: AuthRequest, res): P
       completionUrl: billingCompletionUrl(),
     });
 
+    // Persist local ownership record so list/cancel can be org-scoped.
+    await db.insert(subscriptionsTable).values({
+      providerSubscriptionId: sub.id,
+      organizationId: req.orgId!,
+      planId,
+      status: sub.status,
+    });
+
     res.status(201).json({
       subscriptionId: sub.id,
       url: sub.url,
@@ -69,13 +80,16 @@ router.post("/billing/subscribe", authenticate, async (req: AuthRequest, res): P
 });
 
 // GET /api/billing/subscriptions
-// Authenticated. Lists all subscriptions for the store (the Abacatepay
-// account is the source of truth). In a later slice we will filter by the
-// caller's organization once we persist a local subscription record.
-router.get("/billing/subscriptions", authenticate, async (_req: AuthRequest, res): Promise<void> => {
+// Authenticated + org-scoped. Lists only subscriptions belonging to the
+// caller's organization (local records).
+router.get("/billing/subscriptions", authenticate, requireOrg, async (req: OrgRequest, res): Promise<void> => {
   try {
-    const subs = await listSubscriptions(getBillingClient());
-    res.json({ subscriptions: subs });
+    const rows = await db
+      .select()
+      .from(subscriptionsTable)
+      .where(eq(subscriptionsTable.organizationId, req.orgId!));
+
+    res.json({ subscriptions: rows });
   } catch (err) {
     if (err instanceof BillingError) {
       const status = err.code === "AUTH_FAILED" ? 401 : 502;
@@ -87,8 +101,9 @@ router.get("/billing/subscriptions", authenticate, async (_req: AuthRequest, res
 });
 
 // POST /api/billing/cancel
-// Authenticated. Body: { subscriptionId: string }
-router.post("/billing/cancel", authenticate, async (req: AuthRequest, res): Promise<void> => {
+// Authenticated + org-scoped. Body: { subscriptionId: string }
+// Verifies the subscription belongs to the caller's org before canceling.
+router.post("/billing/cancel", authenticate, requireOrg, async (req: OrgRequest, res): Promise<void> => {
   const subscriptionId = typeof req.body?.subscriptionId === "string" ? req.body.subscriptionId : "";
 
   if (!subscriptionId) {
@@ -96,8 +111,30 @@ router.post("/billing/cancel", authenticate, async (req: AuthRequest, res): Prom
     return;
   }
 
+  // G3 fix — verify org ownership before canceling.
+  const [row] = await db
+    .select()
+    .from(subscriptionsTable)
+    .where(
+      and(
+        eq(subscriptionsTable.providerSubscriptionId, subscriptionId),
+        eq(subscriptionsTable.organizationId, req.orgId!),
+      ),
+    );
+
+  if (!row) {
+    res.status(404).json({ error: "subscription_not_found" });
+    return;
+  }
+
   try {
     const sub = await cancelSubscription(getBillingClient(), subscriptionId);
+
+    await db
+      .update(subscriptionsTable)
+      .set({ status: sub.status })
+      .where(eq(subscriptionsTable.providerSubscriptionId, subscriptionId));
+
     res.json({
       subscriptionId: sub.id,
       status: sub.status,
@@ -150,8 +187,14 @@ router.post("/billing/webhook", async (req, res): Promise<void> => {
       "Billing webhook processed",
     );
 
-    // 200 tells Abacatepay we received it. In a later slice we will persist
-    // the subscription status here so plan-gating can read from the DB.
+    // Update local subscription status if we have a matching record.
+    if (result.chargeId && result.status) {
+      await db
+        .update(subscriptionsTable)
+        .set({ status: result.status })
+        .where(eq(subscriptionsTable.providerSubscriptionId, result.chargeId));
+    }
+
     res.status(200).json({ received: true });
   } catch (err) {
     if (err instanceof BillingError) {
