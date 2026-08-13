@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import pinoHttp from "pino-http";
 import router from "./routes";
@@ -27,6 +28,9 @@ app.use(
     },
   }),
 );
+
+// Security headers — strict transport, clickjacking, MIME sniffing, etc.
+app.use(helmet());
 
 // G1 — Restrict CORS to the known frontend origin(s). WEB_ORIGIN is a
 // comma-separated list in production (e.g. "https://app.arqon.com").
