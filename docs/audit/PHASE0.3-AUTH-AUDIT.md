@@ -122,7 +122,7 @@ if (user[0].organizationId) {
 | Achado | Severidade | Esforço de correção | Prioridade |
 |--------|-----------|---------------------|------------|
 | A — Race condition no registro | ALTA | Médio (transação + unique constraint + handler 23505) | P1 — ✅ Corrigido (d8c8629) |
-| B — Logout stateless | MÉDIA | Médio (blacklist) / Alto (sessões) | P2 — backlog (decisão de arquitetura) |
+| B — Logout stateless | MÉDIA | Médio (blacklist) / Alto (sessões) | P2 — ✅ Corrigido — `revoked_tokens` table + JTI no payload + check no `authenticate` |
 | C — Stack trace vazado | MÉDIA | Baixo (1 middleware de erro + NODE_ENV=prod) | P2 — ✅ Corrigido (d8c8629) |
 | F — GET /organizations com NULL | BAIXA | Baixo (rejeitar NULL) | P3 — ✅ Corrigido |
 | D — Validação Zod | ✅ OK | — | — |

@@ -6,3 +6,4 @@ export * from "./recommendations";
 export * from "./analysis-runs";
 export * from "./entity-exposures";
 export * from "./subscriptions";
+export * from "./revoked-tokens";

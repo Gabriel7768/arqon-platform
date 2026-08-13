@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, usersTable, organizationsTable } from "@workspace/db";
+import { randomUUID } from "node:crypto";
+import { db, usersTable, organizationsTable, revokedTokensTable } from "@workspace/db";
 import { RegisterBody, LoginBody } from "@workspace/api-zod";
 import { hashPassword, comparePassword, signToken } from "../lib/auth";
 import { authenticate, type AuthRequest } from "../middlewares/authenticate";
@@ -61,7 +62,7 @@ router.post("/auth/register", async (req, res): Promise<void> => {
         organizationId: org.id,
       }).returning();
 
-      return { token: signToken({ userId: user.id, email: user.email }), user };
+      return { token: signToken({ userId: user.id, email: user.email, jti: randomUUID() }), user };
     });
 
     res.status(201).json({
@@ -107,7 +108,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  const token = signToken({ userId: user.id, email: user.email });
+  const token = signToken({ userId: user.id, email: user.email, jti: randomUUID() });
 
   res.json({
     token,
@@ -122,7 +123,16 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   });
 });
 
-router.post("/auth/logout", (_req, res): void => {
+// POST /auth/logout — revokes the current token by inserting its JTI into
+// the revoked_tokens table. The authenticate middleware checks this table on
+// every subsequent request and rejects the token.
+router.post("/auth/logout", authenticate, async (req: AuthRequest, res): Promise<void> => {
+  if (req.jti) {
+    await db.insert(revokedTokensTable).values({
+      jti: req.jti,
+      userId: req.userId!,
+    }).onConflictDoNothing();
+  }
   res.sendStatus(204);
 });
 

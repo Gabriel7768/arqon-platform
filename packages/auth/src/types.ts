@@ -1,6 +1,7 @@
 export interface AuthPayload {
   userId: number;
   email: string;
+  jti?: string;
 }
 
 export interface AuthClientConfig {

@@ -1,0 +1,43 @@
+# Render Blueprint — ARQON Platform API Server
+# https://render.com/docs/blueprint-spec
+#
+# The frontend is deployed on Vercel (see artifacts/web/vercel.json) and
+# proxies /api/* to the Render service defined here.
+
+services:
+  - type: web
+    name: arqon-api
+    runtime: node
+    plan: free
+    region: sao-paulo
+    branch: main
+    rootDir: artifacts/api-server
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build
+    startCommand: node --enable-source-maps ./dist/index.mjs
+    healthCheckPath: /api/healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 12000
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+      - key: ABACATEPAY_API_KEY
+        sync: false
+      - key: ABACATEPAY_WEBHOOK_SECRET
+        sync: false
+      - key: ABACATEPAY_PRODUCT_STARTER
+        sync: false
+      - key: ABACATEPAY_PRODUCT_CORE
+        sync: false
+      - key: ABACATEPAY_PRODUCT_GROWTH
+        sync: false
+      - key: ABACATEPAY_PRODUCT_INTELLIGENCE
+        sync: false
