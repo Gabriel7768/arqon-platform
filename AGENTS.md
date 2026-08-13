@@ -123,6 +123,55 @@ Multi-host, decoupled deployment — NOT a single-host monolith:
   app/lib separation → confirms `artifacts/` (apps) + `@workspace/*` import
   discipline is the right call, not just aesthetic.
 
+### Vercel Hobby plan — deploy author restriction (learned 2026-08-13)
+
+The Vercel project is on the **Hobby (free) plan**. This plan blocks deploys
+from commits whose author is NOT the project owner. The error:
+
+> "The deployment was blocked because the commit author did not have
+> contributing access to the project on Vercel. The Hobby plan does not
+> support collaboration for private repositories."
+
+Consequences:
+- Commits authored by `openhands-agent` (the bot's default identity) are
+  blocked. They show as `failure` in GitHub status checks with description
+  "Deployment was blocked."
+- Only commits authored by the project owner (`Gabriel7768`,
+  `ga3310867@gmail.com`) will deploy successfully on the Hobby plan.
+- This is a **commercial restriction**, NOT a technical bug. The code,
+  `vercel.json`, pnpm config, and monorepo layout are all correct.
+
+**Commit identity configuration (MANDATORY for this repo):**
+All commits MUST be authored as the project owner so Vercel deploys succeed:
+
+```bash
+git config user.name "Gabriel Almeida"
+git config user.email "ga3310867@gmail.com"
+```
+
+This is already set on the local working copy. Do NOT override it with
+`openhands@all-hands.dev` or any other identity, or Vercel will block the
+deploy.
+
+**Resolution alternatives (founder's choice):**
+1. Keep committing as Gabriel (current approach — works on Hobby plan).
+2. Upgrade to Vercel Pro (~$20/mo) to allow team collaboration on private
+   repos — then `openhands-agent` commits would also deploy.
+3. Make the GitHub repo public (Hobby allows collaboration on public repos).
+
+**Deploy status verification (MANDATORY before reporting success):**
+Never report "deploy success" based only on `git push` succeeding. Always
+verify the actual Vercel deploy status:
+
+```bash
+gh api repos/Gabriel7768/arqon-platform/commits/<sha>/status \
+  --jq '.statuses[] | {context, state, description}'
+```
+
+A deploy is successful ONLY when `state` is `success` and `description`
+contains "Deployment has completed" — not "Skipped" and not "Deployment
+was blocked."
+
 ## Governance Corpus (materialized in git — verified)
 
 | Document | Type | Status | File |
