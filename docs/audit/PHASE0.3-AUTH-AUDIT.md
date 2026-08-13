@@ -96,15 +96,24 @@ router.post("/auth/logout", (_req, res): void => {
 
 **Conclusão:** Padrão correto (OWASP recomenda mensagens genéricas no login).
 
-### Achado F — organizationId NULL não é alcançável (BAIXA severidade, defesa em profundidade)
+### Achado F — organizationId NULL vaza todas as organizações em GET /organizations (BAIXA severidade, defesa em profundidade)
 
-**Onde:** `artifacts/api-server/src/middlewares/org-guard.ts`.
+**Onde:** `artifacts/api-server/src/routes/organizations.ts` — `GET /organizations` (listagem).
 
-**O que acontece:** O `org-guard` tem um caminho onde, se `req.user.organizationId` for `NULL`, ele lista **todas** as organizações do banco (falta scoping por tenant). Porém, verifiquei no DB: **0 usuários com `organizationId IS NULL`** (de 5 users), e todo registro cria uma org e vincula ao user. Portanto o caminho perigoso não é alcançável pelo fluxo normal hoje.
+**O que acontece:** A rota de listagem busca o usuário e, se `organizationId` for NULL (falsy), cai num `else` que executa `db.select().from(organizationsTable)` **sem cláusula WHERE** — retornando todas as organizações do banco (vazamento cross-tenant). O `orgGuard` (rotas `/:id`) **não** tem esse problema: ele compara `user.organizationId !== orgId`, e `null !== 12` é `true` → 403.
 
-**Impacto:** Hoje = nenhum. Mas é uma defesa em profundidade que falta — se um dia um user for criado sem org (seed manual, migração, bug futuro), ele veria todas as orgs.
+```ts
+// Código vulnerável (antes da correção):
+if (user[0].organizationId) {
+  orgs = await db.select().from(organizationsTable).where(eq(...));
+} else {
+  orgs = await db.select().from(organizationsTable);  // ← lista TODAS as orgs
+}
+```
 
-**Correção recomendada:** No `org-guard`, se `organizationId` for NULL, **rejeitar** (`403`) em vez de listar tudo. Nunca confiar que o caller está sempre vinculado.
+**Impacto:** Hoje = nenhum. Verifiquei no DB: **0 usuários com `organizationId IS NULL`** (de 5 users), e todo registro cria uma org e vincula ao user. Portanto o caminho perigoso não é alcançável pelo fluxo normal hoje. Mas é uma defesa em profundidade que faltava — se um dia um user for criado sem org (seed manual, migração, bug futuro), ele veria todas as orgs.
+
+**Correção aplicada:** Removido o `else` que lista tudo. Se `organizationId` for NULL, a rota retorna **403** `{"error":"organization_access_denied"}` em vez de listar todas as orgs.
 
 ---
 
@@ -112,10 +121,10 @@ router.post("/auth/logout", (_req, res): void => {
 
 | Achado | Severidade | Esforço de correção | Prioridade |
 |--------|-----------|---------------------|------------|
-| A — Race condition no registro | ALTA | Médio (transação + unique constraint + handler 23505) | P1 — corrigir antes de mais usuários reais |
-| B — Logout stateless | MÉDIA | Médio (blacklist) / Alto (sessões) | P2 |
-| C — Stack trace vazado | MÉDIA | Baixo (1 middleware de erro + NODE_ENV=prod) | P2 — rápido de corrigir |
-| F — org-guard com caminho NULL | BAIXA | Baixo (rejeitar NULL) | P3 |
+| A — Race condition no registro | ALTA | Médio (transação + unique constraint + handler 23505) | P1 — ✅ Corrigido (d8c8629) |
+| B — Logout stateless | MÉDIA | Médio (blacklist) / Alto (sessões) | P2 — backlog (decisão de arquitetura) |
+| C — Stack trace vazado | MÉDIA | Baixo (1 middleware de erro + NODE_ENV=prod) | P2 — ✅ Corrigido (d8c8629) |
+| F — GET /organizations com NULL | BAIXA | Baixo (rejeitar NULL) | P3 — ✅ Corrigido |
 | D — Validação Zod | ✅ OK | — | — |
 | E — Sem user enumeration | ✅ OK | — | — |
 

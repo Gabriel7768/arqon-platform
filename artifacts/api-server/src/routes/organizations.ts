@@ -30,12 +30,17 @@ router.get("/organizations", async (req: AuthRequest, res): Promise<void> => {
     return;
   }
 
-  let orgs;
-  if (user[0].organizationId) {
-    orgs = await db.select().from(organizationsTable).where(eq(organizationsTable.id, user[0].organizationId));
-  } else {
-    orgs = await db.select().from(organizationsTable);
+  // A user must be bound to an organization to list organizations. A NULL
+  // organizationId is never expected (registration always binds one), but we
+  // reject it explicitly rather than falling back to listing every org in the
+  // database — that would be a cross-tenant data leak.
+  const userOrgId = user[0].organizationId;
+  if (!userOrgId) {
+    res.status(403).json({ error: "organization_access_denied" });
+    return;
   }
+
+  const orgs = await db.select().from(organizationsTable).where(eq(organizationsTable.id, userOrgId));
 
   res.json(orgs.map((o) => ({
     id: o.id,
