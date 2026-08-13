@@ -93,7 +93,7 @@ O sistema de autenticação está blindado (Achados A, C, F corrigidos). Esta re
 
 | Achado | Severidade | Esforço | Quando |
 |--------|-----------|---------|--------|
-| G1 — CORS aberto | MÉDIA | Baixo (~5 min) | **Agora** (quick win) |
-| G4 — Rate limiting no auth | MÉDIA | Médio (~30 min, nova dep) | **Agora** ou próximo sprint |
+| G1 — CORS aberto | MÉDIA | Baixo (~5 min) | ✅ Corrigido — CORS restrito a `WEB_ORIGIN` |
+| G4 — Rate limiting no auth | MÉDIA | Médio (~30 min, nova dep) | ✅ Corrigido — `express-rate-limit` em `/api/auth` (30/15min) + login (10/15min) |
 | G3 — IDOR no cancel billing | ALTA | Alto (schema + D-012) | Com a evolução do billing (D-012) |
 | G2 — Listagem billing cross-tenant | MÉDIA-ALTA | Alto (schema + D-012) | Com a evolução do billing (D-012) |
